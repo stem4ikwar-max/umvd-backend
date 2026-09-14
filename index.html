@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>УМВД — Официальный Бланк</title>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Times+New+Roman&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    body { background: #111411; color: #e2e8f0; padding: 20px; }
+
+    .auth-card { max-width: 360px; margin: 80px auto; background: #171b17; border: 1px solid #283228; padding: 30px; border-radius: 12px; }
+    .auth-card h2 { font-size: 1.2rem; margin-bottom: 16px; text-align: center; color: #fff; }
+    .auth-card input { width: 100%; padding: 10px; margin-bottom: 12px; background: #0f120f; border: 1px solid #283228; color: #fff; border-radius: 6px; }
+
+    .btn { background: #86efac; color: #0e1f0e; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
+    .btn-sec { background: transparent; border: 1px solid #374151; color: #9ca3af; margin-top: 8px; }
+
+    #app { display: none; gap: 24px; max-width: 1300px; margin: 0 auto; }
+    .panel { flex: 1; background: #171c17; border: 1px solid #283328; padding: 20px; border-radius: 10px; }
+    .panel label { display: block; font-size: 0.8rem; color: #9ca3af; margin: 10px 0 4px; }
+    .panel input, .panel textarea { width: 100%; padding: 8px; background: #111411; border: 1px solid #283328; color: #fff; border-radius: 6px; }
+
+    .admin-box { background: #232d23; border: 1px dashed #86efac; padding: 12px; border-radius: 6px; margin-bottom: 15px; }
+
+    .preview-box { flex: 1; display: flex; flex-direction: column; align-items: center; }
+    .paper-doc { width: 595px; min-height: 842px; background: #ffffff; color: #000000; padding: 50px; font-family: 'Times New Roman', serif; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    
+    .doc-header { text-align: center; line-height: 1.2; margin-bottom: 25px; }
+    .doc-header h3 { font-size: 13pt; text-transform: uppercase; font-weight: bold; }
+    .doc-header p { font-size: 9.5pt; }
+
+    .doc-recipient { margin-left: auto; width: 50%; font-size: 11pt; margin-bottom: 30px; }
+    .doc-meta { display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 25px; font-size: 10pt; }
+
+    .doc-body { font-size: 11pt; line-height: 1.4; text-indent: 25px; text-align: justify; min-height: 250px; }
+    .doc-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; font-size: 11pt; }
+    
+    .sign-container { position: relative; text-align: right; min-width: 160px; }
+    .handwriting { font-family: 'Caveat', cursive; font-size: 28pt; position: absolute; top: -30px; left: 0; color: #0f2b5c; transform: rotate(-6deg); }
+  </style>
+</head>
+<body>
+
+  <div id="auth-screen" class="auth-card">
+    <h2 id="auth-title">Вход в систему</h2>
+    <input type="text" id="auth-user" placeholder="Логин">
+    <input type="password" id="auth-pass" placeholder="Пароль">
+    <button class="btn" onclick="handleAuth()">Войти</button>
+    <button class="btn btn-sec" onclick="toggleAuthMode()">Регистрация</button>
+  </div>
+
+  <div id="app">
+    <div class="panel">
+      <div id="user-bar" style="font-size: 0.85rem; color: #86efac; margin-bottom: 12px;"></div>
+
+      <div id="admin-panel" class="admin-box" style="display: none;">
+        👑 <b>Администратор</b> (Доступ к управлению структурой)
+      </div>
+
+      <label>Кому (ФИО адресата):</label>
+      <input type="text" id="in-to" value="Е.В. Могилеву" oninput="renderDoc()">
+      
+      <label>Адрес адресата:</label>
+      <input type="text" id="in-addr" value="ул. Липецкая, д. 7, г. Волгоград, 400120" oninput="renderDoc()">
+
+      <label>Текст документа:</label>
+      <textarea id="in-body" rows="6" oninput="renderDoc()">Ваше обращение в адрес Министерства внутренних дел Российской Федерации рассмотрено.</textarea>
+
+      <label>Должность подписывающего:</label>
+      <input type="text" id="in-role" value="Заместитель начальника" oninput="renderDoc()">
+
+      <label>Инициалы и Фамилия (например: А.Н. Хабаров):</label>
+      <input type="text" id="in-name" value="А.Н. Хабаров" oninput="renderDoc()">
+
+      <button class="btn" style="margin-top: 15px;" onclick="downloadPNG()">📸 Скачать PNG</button>
+    </div>
+
+    <div class="preview-box">
+      <div class="paper-doc" id="paper-doc">
+        <div class="doc-header">
+          <h3>Министерство Внутренних Дел<br>Российской Федерации</h3>
+          <p><b>(МВД России)</b></p>
+          <p style="margin-top: 6px;"><b>Департамент кадрового обеспечения</b></p>
+          <p style="font-size: 8pt; color: #444;">Газетный пер., 6, Москва, 125009</p>
+        </div>
+
+        <div class="doc-recipient">
+          <p id="out-to">Е.В. Могилеву</p>
+          <p id="out-addr">ул. Липецкая, д. 7</p>
+        </div>
+
+        <div class="doc-meta">
+          <span>на № ________ от ________</span>
+          <span>№ 21/М-2764</span>
+        </div>
+
+        <div class="doc-body" id="out-body"></div>
+
+        <div class="doc-footer">
+          <div id="out-role">Заместитель начальника</div>
+          <div class="sign-container">
+            <span class="handwriting" id="out-sign">Хабаров</span>
+            <span id="out-name">А.Н. Хабаров</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://mvdoborotdm.onrender.com';
+    
+    let isRegMode = false;
+    let token = localStorage.getItem('token');
+    let userRole = localStorage.getItem('role');
+    let username = localStorage.getItem('username');
+    let uid = localStorage.getItem('uid');
+
+    function toggleAuthMode() {
+      isRegMode = !isRegMode;
+      document.getElementById('auth-title').innerText = isRegMode ? 'Регистрация' : 'Вход в систему';
+    }
+
+    async function handleAuth() {
+      const u = document.getElementById('auth-user').value;
+      const p = document.getElementById('auth-pass').value;
+      const route = isRegMode ? '/api/register' : '/api/login';
+
+      try {
+        const res = await fetch(`${API_URL}${route}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+
+        if (data.error) return alert(data.error);
+
+        if (isRegMode) {
+          alert(`Успешная регистрация! Ваш UID: ${data.uid}. Теперь войдите.`);
+          toggleAuthMode();
+        } else {
+          token = data.token;
+          userRole = data.role;
+          username = data.username;
+          uid = data.uid;
+
+          localStorage.setItem('token', token);
+          localStorage.setItem('role', userRole);
+          localStorage.setItem('username', username);
+          localStorage.setItem('uid', uid);
+
+          showMainApp();
+        }
+      } catch {
+        alert('Ошибка связи с сервером');
+      }
+    }
+
+    function showMainApp() {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('user-bar').innerText = `Пользователь: ${username} | UID: ${uid} | Роль: ${userRole}`;
+
+      if (userRole === 'admin') {
+        document.getElementById('admin-panel').style.display = 'block';
+      }
+      renderDoc();
+    }
+
+    function renderDoc() {
+      document.getElementById('out-to').innerText = document.getElementById('in-to').value;
+      document.getElementById('out-addr').innerText = document.getElementById('in-addr').value;
+      document.getElementById('out-body').innerText = document.getElementById('in-body').value;
+      document.getElementById('out-role').innerText = document.getElementById('in-role').value;
+      
+      const nameVal = document.getElementById('in-name').value;
+      document.getElementById('out-name').innerText = nameVal;
+
+      const parts = nameVal.trim().split(' ');
+      const surname = parts[parts.length - 1] || nameVal;
+      document.getElementById('out-sign').innerText = surname;
+    }
+
+    function downloadPNG() {
+      const paper = document.getElementById('paper-doc');
+      html2canvas(paper, { scale: 2 }).then(canvas => {
+        const a = document.createElement('a');
+        a.download = `Документ_МВД_${Date.now()}.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+      });
+    }
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
+        e.preventDefault();
+      }
+    });
+
+    if (token) showMainApp();
+  </script>
+</body>
+</html>
