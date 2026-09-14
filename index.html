@@ -3,78 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>УМВД — Документооборот v5.0</title>
+  <title>УМВД — Электронный Документооборот</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { background-color: #0d0f0d; color: #e2e8f0; overflow: hidden; height: 100vh; width: 100vw; }
+    body { background-color: #0b0d0b; color: #e2e8f0; overflow: hidden; height: 100vh; width: 100vw; }
 
-    /* Auth Screen */
-    #auth-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #172017 0%, #090b09 100%); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .auth-card { background: rgba(23, 27, 23, 0.9); border: 1px solid #283228; padding: 35px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 380px; backdrop-filter: blur(10px); }
-    .auth-card h1 { font-size: 1.4rem; margin-bottom: 20px; color: #fff; }
-    .auth-card input { width: 100%; background: #111411; border: 1px solid #283228; padding: 12px; border-radius: 8px; color: #fff; margin-bottom: 12px; outline: none; }
-    .auth-card input:focus { border-color: #4ade80; }
-    .auth-btns { display: flex; gap: 10px; margin-top: 10px; }
-    .btn-green { background: #4ade80; color: #062006; border: none; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; flex: 1; }
+    /* Окно авторизации по центру */
+    #auth-screen { position: fixed; inset: 0; background: rgba(10, 13, 10, 0.85); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 4000; }
+    .auth-card { background: #141814; border: 1px solid #283428; padding: 32px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); width: 100%; max-width: 360px; }
+    .auth-card h1 { font-size: 1.3rem; margin-bottom: 20px; color: #fff; letter-spacing: 0.5px; }
+    .auth-card input { width: 100%; background: #0b0e0b; border: 1px solid #242e24; padding: 12px 14px; border-radius: 10px; color: #fff; margin-bottom: 12px; outline: none; transition: 0.2s; }
+    .auth-card input:focus { border-color: #4ade80; box-shadow: 0 0 10px rgba(74, 222, 128, 0.2); }
+    .auth-btns { display: flex; gap: 10px; margin-top: 6px; }
+
+    .btn-green { background: #4ade80; color: #062006; border: none; padding: 11px; border-radius: 10px; font-weight: 700; cursor: pointer; flex: 1; transition: 0.2s; }
     .btn-green:hover { background: #86efac; }
-    .btn-outline { background: transparent; border: 1px solid #374151; color: #d1d5db; padding: 10px; border-radius: 8px; cursor: pointer; flex: 1; }
+    .btn-outline { background: transparent; border: 1px solid #2e3b2e; color: #d1d5db; padding: 11px; border-radius: 10px; cursor: pointer; flex: 1; transition: 0.2s; }
+    .btn-outline:hover { background: #1c241c; border-color: #4ade80; }
 
-    /* Top Navigation */
-    #board-viewport { width: 100vw; height: 100vh; position: relative; background-color: #101410; cursor: grab; }
+    /* Рабочая область и зум */
+    #board-viewport { width: 100vw; height: 100vh; position: relative; background-color: #0e120e; cursor: grab; }
     #board-viewport:active { cursor: grabbing; }
-    #board-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0; background-image: radial-gradient(#242d24 1.5px, transparent 1.5px); background-size: 28px 28px; }
-    svg#connections-svg { position: absolute; inset: 0; width: 5000px; height: 5000px; pointer-events: none; z-index: 1; }
+    #board-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0; background-image: radial-gradient(#202920 2px, transparent 2px); background-size: 36px 36px; }
+    svg#connections-svg { position: absolute; inset: 0; width: 10000px; height: 10000px; pointer-events: none; z-index: 1; }
 
-    .top-bar { position: fixed; top: 16px; left: 16px; display: flex; gap: 10px; z-index: 100; align-items: center; background: rgba(18, 22, 18, 0.85); padding: 8px 12px; border-radius: 12px; border: 1px solid #283228; backdrop-filter: blur(8px); }
-    .btn-tool { background: #1a201a; border: 1px solid #2d382d; color: #d1d5db; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
-    .btn-tool:hover { background: #252e25; color: #fff; border-color: #4ade80; }
+    /* Верхняя панель */
+    .top-bar { position: fixed; top: 16px; left: 16px; display: flex; gap: 10px; z-index: 100; align-items: center; background: rgba(16, 21, 16, 0.9); padding: 8px 14px; border-radius: 14px; border: 1px solid #253125; backdrop-filter: blur(10px); }
+    .btn-tool { background: #161c16; border: 1px solid #283428; color: #d1d5db; padding: 9px 15px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+    .btn-tool:hover { background: #222c22; color: #fff; border-color: #4ade80; }
 
-    /* Profile Menu Top Right */
+    /* Профиль справа */
     .profile-container { position: fixed; top: 16px; right: 16px; z-index: 100; }
-    .avatar-btn { width: 44px; height: 44px; border-radius: 50%; background: #4ade80; color: #062006; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #86efac; box-shadow: 0 4px 12px rgba(0,0,0,0.5); user-select: none; }
-    .profile-dropdown { position: absolute; right: 0; top: 54px; background: #171c17; border: 1px solid #2b362b; border-radius: 12px; padding: 14px; width: 220px; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
-    .profile-info { border-bottom: 1px solid #283228; padding-bottom: 10px; margin-bottom: 10px; }
-    .profile-info .name { font-weight: 700; color: #fff; }
-    .profile-info .role-badge { font-size: 0.75rem; color: #86efac; margin-top: 4px; display: inline-block; background: #1c2b1c; padding: 2px 8px; border-radius: 10px; border: 1px solid #2d382d; }
-    
-    /* Nodes */
-    .board-node { position: absolute; background: rgba(23, 28, 23, 0.95); border: 1px solid #283328; border-radius: 12px; padding: 14px 18px; min-width: 190px; cursor: grab; user-select: none; box-shadow: 0 8px 20px rgba(0,0,0,0.6); z-index: 2; backdrop-filter: blur(4px); }
-    .board-node.node-folder { border-left: 4px solid #3b82f6; }
-    .board-node.node-doc { border-left: 4px solid #4ade80; }
-    .node-type { font-size: 0.68rem; color: #8fa38f; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
-    .node-title { font-size: 0.92rem; font-weight: 600; color: #f3f4f6; }
+    .avatar-btn { width: 44px; height: 44px; border-radius: 50%; background: #4ade80; color: #062006; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #86efac; box-shadow: 0 4px 15px rgba(0,0,0,0.6); user-select: none; }
+    .profile-dropdown { position: absolute; right: 0; top: 54px; background: #141814; border: 1px solid #283428; border-radius: 14px; padding: 16px; width: 230px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
+    .profile-info { border-bottom: 1px solid #253125; padding-bottom: 10px; margin-bottom: 12px; }
+    .profile-info .name { font-weight: 700; color: #fff; font-size: 0.95rem; }
+    .profile-info .role-badge { font-size: 0.75rem; color: #86efac; margin-top: 4px; display: inline-block; background: #192419; padding: 3px 9px; border-radius: 12px; border: 1px solid #273627; }
 
-    /* Modals & Editor */
-    .custom-modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 3000; }
-    .custom-modal { background: #171c17; border: 1px solid #2b362b; border-radius: 16px; padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8); }
+    /* Карточки Нод (Увеличенные) */
+    .board-node { position: absolute; background: rgba(20, 25, 20, 0.95); border: 1px solid #2b382b; border-radius: 14px; padding: 16px 20px; min-width: 220px; cursor: grab; user-select: none; box-shadow: 0 10px 25px rgba(0,0,0,0.7); z-index: 2; backdrop-filter: blur(6px); transition: border-color 0.2s; }
+    .board-node:hover { border-color: #4ade80; }
+    .board-node.node-folder { border-left: 5px solid #3b82f6; }
+    .board-node.node-doc { border-left: 5px solid #4ade80; }
+    .node-type { font-size: 0.7rem; color: #8fa38f; margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .node-title { font-size: 1rem; font-weight: 600; color: #f3f4f6; }
 
-    #editor-modal { position: fixed; inset: 0; background: #0d0f0d; display: none; z-index: 2000; flex-direction: column; }
-    .editor-header { height: 56px; background: #141814; border-bottom: 1px solid #242d24; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+    /* Контекстное меню ПКМ */
+    #context-menu { position: fixed; background: #161b16; border: 1px solid #2b382b; border-radius: 12px; padding: 6px; min-width: 170px; display: none; z-index: 5000; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
+    .ctx-item { padding: 9px 12px; font-size: 0.85rem; color: #e2e8f0; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .ctx-item:hover { background: #222b22; color: #86efac; }
+    .ctx-item.danger:hover { background: #3b1818; color: #f87171; }
+
+    /* Центральные всплывающие окна */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 3500; }
+    .modal-box { background: #141814; border: 1px solid #283428; border-radius: 18px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9); }
+    .modal-box h3 { font-size: 1.1rem; color: #fff; margin-bottom: 14px; }
+
+    /* Редактор Документов */
+    #editor-modal { position: fixed; inset: 0; background: #0b0d0b; display: none; z-index: 3000; flex-direction: column; }
+    .editor-header { height: 60px; background: #121612; border-bottom: 1px solid #222b22; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
     .editor-body { flex: 1; display: flex; overflow: hidden; }
-    .editor-left { flex: 1; padding: 24px; overflow-y: auto; background: #111411; border-right: 1px solid #242d24; }
-    .editor-right { flex: 1; background: #161b16; padding: 30px; display: flex; justify-content: center; overflow-y: auto; }
-    
+    .editor-left { flex: 1; padding: 28px; overflow-y: auto; background: #0f130f; border-right: 1px solid #222b22; }
+    .editor-right { flex: 1; background: #141814; padding: 30px; display: flex; justify-content: center; overflow-y: auto; }
+
     .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 0.75rem; color: #9ca3af; margin-bottom: 6px; }
-    .form-control { width: 100%; background: #181f18; border: 1px solid #2b362b; border-radius: 8px; padding: 10px; color: #fff; font-size: 0.9rem; outline: none; }
-    textarea.form-control { resize: vertical; min-height: 70px; }
+    .form-group label { display: block; font-size: 0.78rem; color: #9ca3af; margin-bottom: 6px; font-weight: 500; }
+    .form-control { width: 100%; background: #161c16; border: 1px solid #273427; border-radius: 10px; padding: 11px; color: #fff; font-size: 0.9rem; outline: none; }
+    .form-control:focus { border-color: #4ade80; }
+    textarea.form-control { resize: vertical; min-height: 80px; }
 
-    .paper-doc { width: 100%; max-width: 595px; background: #ffffff; color: #000; padding: 45px; border-radius: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: space-between; min-height: 842px; }
+    .paper-doc { width: 100%; max-width: 600px; background: #ffffff; color: #000; padding: 45px; border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: space-between; min-height: 840px; }
     .doc-images-container { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin: 15px 0; }
-    .doc-img-item { object-fit: contain; }
-
+    
     .user-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .user-table th, .user-table td { border: 1px solid #283228; padding: 8px; text-align: left; font-size: 0.85rem; }
-    .user-table th { background: #1a201a; color: #86efac; }
+    .user-table th, .user-table td { border: 1px solid #253125; padding: 9px; text-align: left; font-size: 0.85rem; }
+    .user-table th { background: #182018; color: #86efac; }
   </style>
 </head>
 <body>
 
-  <!-- Авторизация / Регистрация -->
+  <!-- Форма Авторизации -->
   <div id="auth-screen">
     <div class="auth-card">
       <h1>УМВД ЭДО</h1>
@@ -87,41 +99,63 @@
     </div>
   </div>
 
-  <!-- Главное пространство -->
+  <!-- Главное пространство с близким зумом по умолчанию -->
   <div id="board-viewport">
     <div class="top-bar">
       <div id="leader-tools" style="display:none; gap:10px;">
-        <button class="btn-tool" onclick="createNodePrompt('folder')">+ Тема</button>
-        <button class="btn-tool" onclick="createNodePrompt('doc')">+ Бумага</button>
+        <button class="btn-tool" onclick="openCreateModal('folder')">+ Тема</button>
+        <button class="btn-tool" onclick="openCreateModal('doc')">+ Бумага</button>
       </div>
-      <button class="btn-tool" onclick="resetZoom()">🎯 Сброс зума</button>
+      <button class="btn-tool" onclick="resetZoom()">🎯 По центру</button>
+      <span id="linking-banner" style="display:none; color:#86efac; font-size:0.8rem; font-weight:600; padding-left:10px;">Выберите узел для соединения...</span>
     </div>
 
-    <!-- Аватар пользователя справа сверху -->
+    <!-- Аватарка профиля справа -->
     <div class="profile-container">
       <div class="avatar-btn" id="avatar-btn" onclick="toggleProfileMenu()">U</div>
       <div class="profile-dropdown" id="profile-dropdown">
         <div class="profile-info">
           <div class="name" id="prof-name">Пользователь</div>
           <div class="role-badge" id="prof-role">Обычный пользователь</div>
-          <div style="font-size: 0.7rem; color: #6b7280; margin-top: 4px;">UID: <span id="prof-uid">1</span></div>
+          <div style="font-size: 0.72rem; color: #6b7280; margin-top: 5px;">UID: <span id="prof-uid">1</span></div>
         </div>
         <button class="btn-tool" id="btn-admin-modal" style="width:100%; margin-bottom: 8px; display:none;" onclick="openAdminModal()">👑 Админ-панель</button>
         <button class="btn-tool" style="width:100%; color:#f87171;" onclick="logout()">Выйти</button>
       </div>
     </div>
-    
+
     <div id="board-container">
       <svg id="connections-svg"></svg>
     </div>
   </div>
 
-  <!-- Админ-модалка -->
-  <div class="custom-modal-overlay" id="admin-modal">
-    <div class="custom-modal">
-      <h3>Администрирование УМВД</h3>
-      <p style="font-size: 0.8rem; color: #9ca3af; margin-bottom: 10px;">Список пользователей и выдача прав Лидера:</p>
-      <div style="max-height: 250px; overflow-y: auto;">
+  <!-- Контекстное Меню (ПКМ) -->
+  <div id="context-menu">
+    <div class="ctx-item" onclick="startLinkingProcess()">🔗 Соединить с...</div>
+    <div class="ctx-item" id="ctx-edit-title" onclick="renameNodePrompt()">✏️ Переименовать</div>
+    <div class="ctx-item danger" id="ctx-delete-node" onclick="deleteNodeAction()">🗑️ Удалить</div>
+  </div>
+
+  <!-- Модальное окно создания темы/бумаги по центру -->
+  <div class="modal-overlay" id="create-modal">
+    <div class="modal-box">
+      <h3 id="create-modal-title">Создать элемент</h3>
+      <div class="form-group">
+        <label>Название</label>
+        <input type="text" id="create-node-name" class="form-control" placeholder="Введите название...">
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn-outline" onclick="closeCreateModal()">Отмена</button>
+        <button class="btn-green" onclick="submitCreateNode()">Создать</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Окно Админки -->
+  <div class="modal-overlay" id="admin-modal">
+    <div class="modal-box" style="max-width: 520px;">
+      <h3>Управление пользователями</h3>
+      <div style="max-height: 280px; overflow-y: auto;">
         <table class="user-table">
           <thead>
             <tr>
@@ -135,13 +169,13 @@
           <tbody id="admin-users-list"></tbody>
         </table>
       </div>
-      <div style="margin-top: 15px; text-align: right;">
+      <div style="margin-top: 18px; text-align: right;">
         <button class="btn-outline" onclick="document.getElementById('admin-modal').style.display='none'">Закрыть</button>
       </div>
     </div>
   </div>
 
-  <!-- Редактор документа -->
+  <!-- Редактор Бумаги -->
   <div id="editor-modal">
     <div class="editor-header">
       <span id="ed-breadcrumb" style="color:#86efac; font-weight:600;">Документ</span>
@@ -152,9 +186,8 @@
     </div>
     <div class="editor-body">
       <div class="editor-left">
-        <!-- Настройки Лидера -->
-        <div id="leader-editor-controls" style="display:none; background:#182218; border:1px dashed #4ade80; padding:12px; border-radius:8px; margin-bottom:15px;">
-          <h4 style="font-size:0.8rem; color:#86efac; margin-bottom:8px;">👑 Панель Лидера: Настройка Бланка</h4>
+        <div id="leader-editor-controls" style="display:none; background:#162016; border:1px dashed #4ade80; padding:14px; border-radius:12px; margin-bottom:18px;">
+          <h4 style="font-size:0.82rem; color:#86efac; margin-bottom:10px;">👑 Настройка бланка лидера</h4>
           <div class="form-group">
             <label>Шрифт документа</label>
             <select id="cfg-font" class="form-control" onchange="updatePaper()">
@@ -163,9 +196,9 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Изображения (Гербы / Печати / Скриншоты)</label>
+            <label>Изображения (Гербы, Печати)</label>
             <div id="images-list"></div>
-            <label class="btn-tool" style="margin-top:6px; cursor:pointer; justify-content:center;">
+            <label class="btn-tool" style="margin-top:8px; cursor:pointer; justify-content:center;">
               📁 Загрузить фото <input type="file" accept="image/*" style="display:none;" onchange="uploadImageFromFile(event)">
             </label>
           </div>
@@ -176,20 +209,20 @@
           <input type="text" id="inp-title" class="form-control" oninput="updatePaper()">
         </div>
         <div class="form-group">
-          <label>Код / Номер документа</label>
+          <label>Код / Номер</label>
           <input type="text" id="inp-code" class="form-control" oninput="updatePaper()">
         </div>
         <div class="form-group">
-          <label>Вступительная часть (Преамбула)</label>
+          <label>Преамбула</label>
           <textarea id="inp-intro" class="form-control" oninput="updatePaper()"></textarea>
         </div>
         <div class="form-group">
-          <label>Основной текст / Постановление</label>
+          <label>Основной текст</label>
           <textarea id="inp-main" class="form-control" style="min-height: 120px;" oninput="updatePaper()"></textarea>
         </div>
         <div style="display: flex; gap: 10px;">
           <div class="form-group" style="flex: 1;">
-            <label>Автор (ФИО полностью)</label>
+            <label>Автор (ФИО)</label>
             <input type="text" id="inp-author" placeholder="Павел Аграбейко" class="form-control" oninput="updatePaper()">
           </div>
           <div class="form-group" style="flex: 1;">
@@ -213,7 +246,6 @@
             </div>
             
             <div class="doc-images-container" id="p-images-box"></div>
-
             <hr style="margin-bottom: 15px; border: 0; border-top: 1px solid #000;">
             
             <div style="font-size: 11pt; line-height: 1.5; text-align: justify;">
@@ -240,13 +272,18 @@
   <script>
     let currentUser = null;
     let store = [];
-    let scale = 1, panX = 0, panY = 0;
+    let scale = 1.3, panX = window.innerWidth / 4, panY = window.innerHeight / 4; // Близкий масштаб
     let editingDocId = null;
     let currentImages = [];
+
+    let targetCreateType = 'folder';
+    let selectedNodeForCtx = null;
+    let linkingSourceNode = null;
 
     const viewport = document.getElementById('board-viewport');
     const board = document.getElementById('board-container');
     const svg = document.getElementById('connections-svg');
+    const contextMenu = document.getElementById('context-menu');
 
     // Авторизация
     async function checkAuthStatus() {
@@ -271,11 +308,8 @@
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
-      if (data.success) {
-        checkAuthStatus();
-      } else {
-        alert(data.error || 'Ошибка входа');
-      }
+      if (data.success) checkAuthStatus();
+      else alert(data.error || 'Ошибка входа');
     }
 
     async function logout() {
@@ -297,7 +331,10 @@
       if (currentUser.is_leader || currentUser.role === 'ADMIN') {
         document.getElementById('leader-tools').style.display = 'flex';
         document.getElementById('leader-editor-controls').style.display = 'block';
+      } else {
+        document.getElementById('ctx-delete-node').style.display = 'none';
       }
+
       if (currentUser.role === 'ADMIN') {
         document.getElementById('btn-admin-modal').style.display = 'block';
       }
@@ -308,10 +345,11 @@
       el.style.display = el.style.display === 'block' ? 'none' : 'block';
     }
 
-    // Доска
+    // Соединения и Доска
     async function loadBoard() {
       const res = await fetch('/api/board');
       store = await res.json();
+      updateTransform();
       renderBoard();
     }
 
@@ -340,12 +378,36 @@
           <div class="node-title">${node.title}</div>
         `;
 
-        // Драг-энд-дроп разрешен только Лидерам/Админам
+        // ПКМ контекстное меню
+        div.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          selectedNodeForCtx = node;
+          contextMenu.style.left = e.clientX + 'px';
+          contextMenu.style.top = e.clientY + 'px';
+          contextMenu.style.display = 'block';
+        });
+
+        // ЛКМ Клик / Соединение
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (linkingSourceNode) {
+            if (linkingSourceNode.id !== node.id) {
+              node.parentId = linkingSourceNode.id;
+              saveBoard();
+              renderBoard();
+            }
+            linkingSourceNode = null;
+            document.getElementById('linking-banner').style.display = 'none';
+            return;
+          }
+          if (isDoc) openEditor(node.id);
+        });
+
         if (currentUser.is_leader || currentUser.role === 'ADMIN') {
           div.addEventListener('mousedown', (e) => { if (e.button === 0) startDrag(e, node); });
         }
 
-        div.addEventListener('click', () => { if (isDoc) openEditor(node.id); });
         board.appendChild(div);
       });
 
@@ -359,11 +421,11 @@
           const parent = store.find(n => n.id === node.parentId);
           if (parent) {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            const x1 = parent.x + 95, y1 = parent.y + 35, x2 = node.x + 95, y2 = node.y + 35;
+            const x1 = parent.x + 110, y1 = parent.y + 40, x2 = node.x + 110, y2 = node.y + 40;
             const dx = Math.abs(x2 - x1) / 2;
             path.setAttribute('d', `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
             path.setAttribute('stroke', '#4ade80');
-            path.setAttribute('stroke-width', '2.5');
+            path.setAttribute('stroke-width', '3');
             path.setAttribute('fill', 'none');
             svg.appendChild(path);
           }
@@ -371,14 +433,35 @@
       });
     }
 
-    // Создание элементов
-    function createNodePrompt(type) {
-      const title = prompt(type === 'doc' ? 'Название документа:' : 'Название отдела:');
+    // Соединить узлы
+    function startLinkingProcess() {
+      contextMenu.style.display = 'none';
+      if (!selectedNodeForCtx) return;
+      linkingSourceNode = selectedNodeForCtx;
+      document.getElementById('linking-banner').style.display = 'inline';
+    }
+
+    // Модальное окно создания по центру
+    function openCreateModal(type) {
+      targetCreateType = type;
+      document.getElementById('create-modal-title').innerText = type === 'doc' ? 'Создать Бумагу' : 'Создать Тему';
+      document.getElementById('create-node-name').value = '';
+      document.getElementById('create-modal').style.display = 'flex';
+    }
+
+    function closeCreateModal() {
+      document.getElementById('create-modal').style.display = 'none';
+    }
+
+    function submitCreateNode() {
+      const title = document.getElementById('create-node-name').value;
       if (title) {
         store.push({
           id: Date.now().toString(),
-          type, title,
-          x: (-panX + 300) / scale, y: (-panY + 200) / scale,
+          type: targetCreateType,
+          title,
+          x: (-panX + window.innerWidth / 2) / scale,
+          y: (-panY + window.innerHeight / 2) / scale,
           code: 'УМВД-00' + (store.length + 1),
           intro: '', main: '', author: '', role: '', date: new Date().toLocaleDateString(),
           font: "'Times New Roman', serif", images: []
@@ -386,19 +469,42 @@
         saveBoard();
         renderBoard();
       }
+      closeCreateModal();
     }
 
-    // Панорамирование / Зум
+    function renameNodePrompt() {
+      contextMenu.style.display = 'none';
+      if (!selectedNodeForCtx) return;
+      const newTitle = prompt('Новое название:', selectedNodeForCtx.title);
+      if (newTitle) {
+        selectedNodeForCtx.title = newTitle;
+        saveBoard();
+        renderBoard();
+      }
+    }
+
+    function deleteNodeAction() {
+      contextMenu.style.display = 'none';
+      if (!selectedNodeForCtx) return;
+      store = store.filter(n => n.id !== selectedNodeForCtx.id && n.parentId !== selectedNodeForCtx.id);
+      saveBoard();
+      renderBoard();
+    }
+
+    // Зум и Панорамирование
     function updateTransform() { board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
-    function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
+    function resetZoom() { scale = 1.3; panX = window.innerWidth / 4; panY = window.innerHeight / 4; updateTransform(); }
 
     viewport.addEventListener('wheel', (e) => {
       e.preventDefault();
-      scale = e.deltaY < 0 ? Math.min(scale * 1.1, 2.5) : Math.max(scale / 1.1, 0.4);
+      scale = e.deltaY < 0 ? Math.min(scale * 1.1, 2.5) : Math.max(scale / 1.1, 0.6);
       updateTransform();
     }, { passive: false });
 
-    // Админ Панель
+    // Закрыть контекстное меню при клике в пустом месте
+    window.addEventListener('click', () => { contextMenu.style.display = 'none'; });
+
+    // Админка
     async function openAdminModal() {
       const res = await fetch('/api/admin/users');
       const users = await res.json();
@@ -411,10 +517,10 @@
           <td>${u.id}</td>
           <td>${u.username}</td>
           <td>${u.role}</td>
-          <td>${u.is_leader ? '✅ Лидер' : '❌ Нет'}</td>
+          <td>${u.is_leader ? '✅ Да' : '❌ Нет'}</td>
           <td>
             <button class="btn-tool" onclick="toggleLeader(${u.id}, ${!u.is_leader})">
-              ${u.is_leader ? 'Снять Лидерку' : 'Выдать Лидера'}
+              ${u.is_leader ? 'Снять Лидера' : 'Выдать Лидера'}
             </button>
           </td>
         `;
@@ -433,17 +539,15 @@
       openAdminModal();
     }
 
-    // Форматирование ФИО подписи (Имя Фамилия -> И. Фамилия)
+    // Подпись: "Павел Аграбейко" -> "П. Аграбейко"
     function formatAuthorSignature(fullName) {
       if (!fullName) return '';
       const parts = fullName.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        return `${parts[0].charAt(0).toUpperCase()}. ${parts[1]}`;
-      }
+      if (parts.length >= 2) return `${parts[0].charAt(0).toUpperCase()}. ${parts[1]}`;
       return fullName;
     }
 
-    // Редактор
+    // Редактор документа
     function openEditor(id) {
       const doc = store.find(n => n.id === id);
       if (!doc) return;
@@ -484,7 +588,7 @@
         const div = document.createElement('div');
         div.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
         div.innerHTML = `
-          <input type="number" class="form-control" placeholder="Размер px" value="${img.width}" oninput="currentImages[${idx}].width=this.value; updatePaper();">
+          <input type="number" class="form-control" placeholder="Ширина px" value="${img.width}" oninput="currentImages[${idx}].width=this.value; updatePaper();">
           <button style="color:#f87171; background:none; border:none; cursor:pointer;" onclick="currentImages.splice(${idx},1); renderImageControls(); updatePaper();">✕</button>
         `;
         container.appendChild(div);
@@ -501,7 +605,6 @@
       document.getElementById('p-intro').innerText = document.getElementById('inp-intro').value;
       document.getElementById('p-main').innerText = document.getElementById('inp-main').value;
       
-      // Авто-форматирование подписи
       const rawAuthor = document.getElementById('inp-author').value;
       document.getElementById('p-author').innerText = formatAuthorSignature(rawAuthor);
 
@@ -514,8 +617,8 @@
         if (img.url) {
           const imageEl = document.createElement('img');
           imageEl.src = img.url;
-          imageEl.className = 'doc-img-item';
           imageEl.style.width = (img.width || 90) + 'px';
+          imageEl.style.objectFit = 'contain';
           imgBox.appendChild(imageEl);
         }
       });
@@ -551,7 +654,7 @@
       document.getElementById('editor-modal').style.display = 'none';
     }
 
-    // Драг нод
+    // Драг узлов
     let activeDragNode = null, dragOffset = { x: 0, y: 0 };
     function startDrag(e, node) {
       activeDragNode = node;
@@ -576,7 +679,6 @@
       saveBoard();
     }
 
-    // Инициализация при старте
     checkAuthStatus();
   </script>
 </body>
