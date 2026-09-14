@@ -7,7 +7,7 @@ app.use(express.json());
 // Отдаём статические файлы из корня
 app.use(express.static(__dirname));
 
-// Простая база данных в памяти (для теста)
+// Хранилище данных (база пользователей и доска)
 let users = [];
 let boardNodes = [
   { id: '1', type: 'folder', title: 'Руководство УМВД', x: 100, y: 100 },
@@ -20,21 +20,27 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Авторизация и регистрация
+// --- РЕГИСТРАЦИЯ И ВХОД ---
+
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.json({ success: false, error: 'Заполните все поля' });
   
-  const existing = users.find(u => u.username === username);
-  if (existing) return res.json({ success: false, error: 'Пользователь уже существует' });
+  const existing = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (existing) return res.json({ success: false, error: 'Пользователь с таким логином уже существует' });
+
+  // Первый зарегистрированный пользователь получает ID = 1 и уникальные права Главного Админа
+  const isFirstUser = users.length === 0;
 
   const newUser = {
-    id: Date.now(),
+    id: users.length + 1, // UID: 1, 2, 3...
     username,
     password,
-    role: users.length === 0 ? 'ADMIN' : 'USER', // Первый зарегистрированный — админ
-    is_leader: users.length === 0
+    role: isFirstUser ? 'ADMIN' : 'USER',
+    is_leader: isFirstUser,
+    is_main_admin: isFirstUser // Флаг Главного Админа (ID 1)
   };
+
   users.push(newUser);
   currentUser = newUser;
   res.json({ success: true, user: newUser });
@@ -42,7 +48,7 @@ app.post('/api/register', (req, res) => {
 
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  const user = users.find(u => u.username === username && u.password === password);
+  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
   if (!user) return res.json({ success: false, error: 'Неверный логин или пароль' });
 
   currentUser = user;
@@ -62,7 +68,8 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Доска документов
+// --- ДОСКА И БЛАНКИ ---
+
 app.get('/api/board', (req, res) => {
   res.json(boardNodes);
 });
@@ -74,7 +81,6 @@ app.post('/api/board', (req, res) => {
   res.json({ success: true });
 });
 
-// Лидерские бланки
 app.get('/api/leader/templates', (req, res) => {
   res.json([
     { id: 't1', title: 'Постановление о возбуждении', code: 'УМВД-П-01', bodyHtml: '<b>Установил:</b> ...<br><b>Решил:</b> ...', role: 'Следователь' },
@@ -82,18 +88,36 @@ app.get('/api/leader/templates', (req, res) => {
   ]);
 });
 
-// Админ-панель
+// --- АДМИН-ПАНЕЛЬ (Управление ролями) ---
+
 app.get('/api/admin/users', (req, res) => {
+  if (!currentUser || currentUser.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Нет доступа' });
+  }
+  // Возвращаем всех пользователей
   res.json(users);
 });
 
 app.post('/api/admin/update-user', (req, res) => {
-  const { id, role, is_leader } = req.body;
-  const user = users.find(u => u.id === id);
-  if (user) {
-    user.role = role;
-    user.is_leader = is_leader;
+  if (!currentUser || currentUser.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Нет доступа' });
   }
+
+  const { id, role, is_leader } = req.body;
+  const targetUser = users.find(u => u.id === Number(id));
+
+  if (!targetUser) {
+    return res.json({ success: false, error: 'Пользователь не найден' });
+  }
+
+  // Запрет на снятие админки/лидерки у самого первого главного админа (UID 1)
+  if (targetUser.is_main_admin && (role !== 'ADMIN' || !is_leader)) {
+    return res.json({ success: false, error: 'Нельзя снять права у Главного Администратора (UID 1)' });
+  }
+
+  targetUser.role = role;
+  targetUser.is_leader = Boolean(is_leader);
+
   res.json({ success: true });
 });
 
