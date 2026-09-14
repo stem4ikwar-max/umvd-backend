@@ -3,10 +3,14 @@ let boardNodes = [];
 let leaderTemplates = [];
 let currentEditingDoc = null;
 let currentCreateType = 'folder';
+let selectedNodeId = null;
 
-// --- ИНИЦИАЛИЗАЦИЯ И АВТОРИЗАЦИЯ ---
 window.addEventListener('DOMContentLoaded', () => {
   checkAuth();
+  document.addEventListener('click', () => {
+    const menu = document.getElementById('context-menu');
+    if (menu) menu.style.display = 'none';
+  });
 });
 
 function switchAuthTab(type) {
@@ -20,15 +24,13 @@ async function submitAuth() {
   const username = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value.trim();
   const isLogin = document.getElementById('tab-login').classList.contains('active');
-  const endpoint = isLogin ? '/api/login' : '/api/register';
 
-  const res = await fetch(endpoint, {
+  const res = await fetch(isLogin ? '/api/login' : '/api/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
   const data = await res.json();
-
   if (!data.success) return alert(data.error);
 
   currentUser = data.user;
@@ -73,7 +75,6 @@ function showBoard() {
   loadBoard();
 }
 
-// --- ДОСКА И ЭЛЕМЕНТЫ ---
 async function loadBoard() {
   const res = await fetch('/api/board');
   boardNodes = await res.json();
@@ -84,21 +85,106 @@ function renderBoard() {
   const container = document.getElementById('board-container');
   container.querySelectorAll('.board-card').forEach(c => c.remove());
 
+  renderConnections();
+
   boardNodes.forEach(node => {
     const card = document.createElement('div');
     card.className = `board-card ${node.type}`;
-    card.style.cssText = `position:absolute; left:${node.x || 100}px; top:${node.y || 100}px; background:#15181e; border:1px solid #282d37; padding:12px; border-radius:8px; color:#fff; cursor:pointer; width:160px;`;
+    card.style.cssText = `
+      position:absolute; left:${node.x || 100}px; top:${node.y || 100}px; 
+      background:${node.color || '#15181e'}; border:1px solid #282d37; 
+      padding:12px; border-radius:8px; color:#fff; cursor:pointer; width:160px; z-index:2;
+    `;
     
     card.innerHTML = `
       <div style="font-weight:bold; font-size:0.9rem;">${node.type === 'folder' ? '📁' : '📄'} ${node.title}</div>
       ${node.code ? `<div style="font-size:0.75rem; color:#60a5fa;">${node.code}</div>` : ''}
     `;
 
-    if (node.type === 'doc') {
-      card.onclick = () => openEditor(node);
-    }
+    card.onclick = (e) => {
+      e.stopPropagation();
+      if (node.type === 'doc') openEditor(node);
+    };
+
+    card.oncontextmenu = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      selectedNodeId = node.id;
+      const menu = document.getElementById('context-menu');
+      menu.style.left = `${e.clientX}px`;
+      menu.style.top = `${e.clientY}px`;
+      menu.style.display = 'block';
+    };
 
     container.appendChild(card);
+  });
+}
+
+function renderConnections() {
+  const svg = document.getElementById('connections-svg');
+  if (!svg) return;
+  svg.innerHTML = '';
+
+  boardNodes.forEach(node => {
+    if (node.parentId) {
+      const parent = boardNodes.find(n => n.id === node.parentId);
+      if (parent) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', (parent.x || 100) + 80);
+        line.setAttribute('y1', (parent.y || 100) + 20);
+        line.setAttribute('x2', (node.x || 100) + 80);
+        line.setAttribute('y2', (node.y || 100) + 20);
+        line.setAttribute('stroke', '#3b82f6');
+        line.setAttribute('stroke-width', '2');
+        line.setAttribute('stroke-dasharray', '4');
+        svg.appendChild(line);
+      }
+    }
+  });
+}
+
+async function changeNodeColor(color) {
+  const node = boardNodes.find(n => n.id === selectedNodeId);
+  if (node) {
+    node.color = color;
+    await saveBoardData();
+    renderBoard();
+  }
+}
+
+async function attachParentPrompt() {
+  const folders = boardNodes.filter(n => n.type === 'folder' && n.id !== selectedNodeId);
+  if (folders.length === 0) return alert('Нет доступных отделов!');
+
+  const folderNames = folders.map((f, i) => `${i + 1}. ${f.title}`).join('\n');
+  const choice = prompt(`Выберите отдел (0 для отвязки):\n${folderNames}`);
+  
+  if (choice === null) return;
+  const idx = parseInt(choice) - 1;
+
+  const node = boardNodes.find(n => n.id === selectedNodeId);
+  if (choice === '0') {
+    delete node.parentId;
+  } else if (folders[idx]) {
+    node.parentId = folders[idx].id;
+  }
+
+  await saveBoardData();
+  renderBoard();
+}
+
+async function deleteCurrentNode() {
+  if (!confirm('Удалить элемент?')) return;
+  boardNodes = boardNodes.filter(n => n.id !== selectedNodeId);
+  await saveBoardData();
+  renderBoard();
+}
+
+async function saveBoardData() {
+  await fetch('/api/board', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nodes: boardNodes })
   });
 }
 
@@ -121,8 +207,9 @@ async function submitCreateNode() {
     id: Date.now().toString(),
     type: currentCreateType,
     title: name,
-    x: 150 + Math.random() * 200,
-    y: 150 + Math.random() * 200
+    color: '#15181e',
+    x: 150 + Math.random() * 150,
+    y: 150 + Math.random() * 150
   };
 
   if (currentCreateType === 'doc') {
@@ -133,21 +220,11 @@ async function submitCreateNode() {
   }
 
   boardNodes.push(newNode);
-  await fetch('/api/board', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nodes: boardNodes })
-  });
-
+  await saveBoardData();
   closeCreateModal();
   renderBoard();
 }
 
-function resetZoom() {
-  document.getElementById('board-container').scrollTo(0, 0);
-}
-
-// --- ПАНЕЛЬ ЛИДЕРА И БЛАНКИ ---
 async function openLeaderModal() {
   const res = await fetch('/api/leader/templates');
   leaderTemplates = await res.json();
@@ -197,7 +274,6 @@ async function saveLeaderTemplates() {
   });
 }
 
-// --- РЕДАКТОР ДОКУМЕНТА ---
 function openEditor(doc, isTemplate = false) {
   currentEditingDoc = { ...doc, isTemplate };
   document.getElementById('editor-modal').style.display = 'flex';
@@ -206,7 +282,14 @@ function openEditor(doc, isTemplate = false) {
   document.getElementById('inp-author').value = doc.author || currentUser.username;
   document.getElementById('inp-role').value = doc.role || currentUser.role;
 
-  document.getElementById('leader-img-upload').style.display = (currentUser.is_leader || currentUser.role === 'ADMIN') ? 'block' : 'none';
+  const isLeaderOrAdmin = currentUser.is_leader || currentUser.role === 'ADMIN';
+  
+  document.getElementById('leader-img-upload').style.display = isLeaderOrAdmin ? 'block' : 'none';
+
+  const saveBtn = document.getElementById('btn-save-global');
+  if (saveBtn) {
+    saveBtn.style.display = isLeaderOrAdmin ? 'block' : 'none';
+  }
 
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
@@ -240,8 +323,7 @@ function renderPaper() {
   const sectionsRender = document.getElementById('paper-sections-render');
   sectionsRender.innerHTML = '';
 
-  const blocks = document.querySelectorAll('.section-block');
-  blocks.forEach(b => {
+  document.querySelectorAll('.section-block').forEach(b => {
     const title = b.querySelector('.section-title').innerText;
     const text = b.querySelector('.sec-textarea').value;
     
@@ -255,19 +337,11 @@ function renderPaper() {
   });
 }
 
-function uploadImageFromFile(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const imgContainer = document.getElementById('images-container');
-    imgContainer.innerHTML = `<img src="${e.target.result}" style="position:absolute; bottom:30px; right:30px; max-width:120px; opacity:0.8;">`;
-  };
-  reader.readAsDataURL(file);
-}
-
 async function saveEditorData() {
+  if (!currentUser.is_leader && currentUser.role !== 'ADMIN') {
+    return alert('Только Лидер или Админ может сохранять изменения для всех!');
+  }
+
   const sections = [];
   document.querySelectorAll('.section-block').forEach(b => {
     sections.push({
@@ -285,17 +359,13 @@ async function saveEditorData() {
     const idx = leaderTemplates.findIndex(t => t.id === currentEditingDoc.id);
     if (idx !== -1) leaderTemplates[idx] = currentEditingDoc;
     await saveLeaderTemplates();
-    alert('Бланк лидера сохранен!');
+    alert('Бланк сохранен для всех!');
   } else {
     const idx = boardNodes.findIndex(n => n.id === currentEditingDoc.id);
     if (idx !== -1) boardNodes[idx] = currentEditingDoc;
-    await fetch('/api/board', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nodes: boardNodes })
-    });
+    await saveBoardData();
     renderBoard();
-    alert('Документ сохранен!');
+    alert('Документ сохранен для всех!');
   }
 
   closeEditorWithoutSaving();
@@ -306,17 +376,6 @@ function closeEditorWithoutSaving() {
   currentEditingDoc = null;
 }
 
-function downloadPNG() {
-  const paper = document.getElementById('paper-doc');
-  html2canvas(paper).then(canvas => {
-    const link = document.createElement('a');
-    link.download = `${document.getElementById('inp-code').value || 'document'}.png`;
-    link.href = canvas.toDataURL();
-    link.click();
-  });
-}
-
-// --- АДМИН-ПАНЕЛЬ ---
 async function openAdminModal() {
   const res = await fetch('/api/admin/users');
   const users = await res.json();
@@ -357,5 +416,5 @@ async function saveUserRole(userId) {
   const data = await res.json();
   if (!data.success) return alert(data.error);
 
-  alert('Права пользователя обновлены!');
+  alert('Права успешно обновлены!');
 }
