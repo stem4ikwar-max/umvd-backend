@@ -10,111 +10,121 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { background-color: #0b0d0b; color: #e2e8f0; overflow: hidden; height: 100vh; width: 100vw; }
+    body { background-color: #080a08; color: #e2e8f0; overflow: hidden; height: 100vh; width: 100vw; }
 
-    /* Окно авторизации */
-    #auth-screen { position: fixed; inset: 0; background: rgba(10, 13, 10, 0.85); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 4000; }
-    .auth-card { background: #141814; border: 1px solid #283428; padding: 32px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); width: 100%; max-width: 360px; }
-    .auth-card h1 { font-size: 1.3rem; margin-bottom: 20px; color: #fff; }
-    .auth-card input { width: 100%; background: #0b0e0b; border: 1px solid #242e24; padding: 12px 14px; border-radius: 10px; color: #fff; margin-bottom: 12px; outline: none; }
-    .auth-btns { display: flex; gap: 10px; margin-top: 6px; }
+    /* Точечный фон на весь экран */
+    #dots-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: radial-gradient(#223022 1.5px, transparent 1.5px); background-size: 28px 28px; }
 
-    .btn-green { background: #4ade80; color: #062006; border: none; padding: 11px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    /* Форма Авторизации / Регистрации */
+    #auth-screen { position: fixed; inset: 0; background: rgba(5, 7, 5, 0.9); backdrop-filter: blur(14px); display: flex; align-items: center; justify-content: center; z-index: 5000; }
+    .auth-card { background: #111511; border: 1px solid #233023; padding: 32px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); width: 100%; max-width: 380px; }
+    .auth-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: #0a0d0a; padding: 4px; border-radius: 12px; border: 1px solid #1c261c; }
+    .auth-tab { flex: 1; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #8fa38f; cursor: pointer; transition: 0.2s; }
+    .auth-tab.active { background: #1c261c; color: #4ade80; }
+    .auth-card h1 { font-size: 1.3rem; margin-bottom: 16px; color: #fff; }
+    .auth-card input { width: 100%; background: #080a08; border: 1px solid #202b20; padding: 12px 14px; border-radius: 10px; color: #fff; margin-bottom: 12px; outline: none; }
+    .auth-card input:focus { border-color: #4ade80; }
+
+    .btn-green { background: #4ade80; color: #062006; border: none; padding: 11px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; width: 100%; }
     .btn-green:hover { background: #86efac; }
-    .btn-outline { background: transparent; border: 1px solid #2e3b2e; color: #d1d5db; padding: 11px 16px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
-    .btn-outline:hover { background: #1c241c; border-color: #4ade80; }
+    .btn-outline { background: transparent; border: 1px solid #2a382a; color: #d1d5db; padding: 9px 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: 600; }
+    .btn-outline:hover { background: #182218; border-color: #4ade80; color: #fff; }
 
-    /* Рабочее пространство (Средний комфортный зум) */
-    #board-viewport { width: 100vw; height: 100vh; position: relative; background-color: #0e120e; cursor: grab; }
+    /* Полотно доски */
+    #board-viewport { width: 100vw; height: 100vh; position: relative; cursor: grab; z-index: 1; }
     #board-viewport:active { cursor: grabbing; }
-    #board-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0; background-image: radial-gradient(#202920 2px, transparent 2px); background-size: 32px 32px; }
+    #board-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0; }
     svg#connections-svg { position: absolute; inset: 0; width: 10000px; height: 10000px; pointer-events: none; z-index: 1; }
 
-    /* Панель инструментов */
-    .top-bar { position: fixed; top: 16px; left: 16px; display: flex; gap: 10px; z-index: 100; align-items: center; background: rgba(16, 21, 16, 0.9); padding: 8px 14px; border-radius: 14px; border: 1px solid #253125; backdrop-filter: blur(10px); }
-    .btn-tool { background: #161c16; border: 1px solid #283428; color: #d1d5db; padding: 9px 15px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-    .btn-tool:hover { background: #222c22; color: #fff; border-color: #4ade80; }
+    /* Верхняя Панель */
+    .top-bar { position: fixed; top: 16px; left: 16px; display: flex; gap: 10px; z-index: 100; align-items: center; background: rgba(13, 17, 13, 0.92); padding: 8px 14px; border-radius: 14px; border: 1px solid #233023; backdrop-filter: blur(10px); }
+    .btn-tool { background: #141a14; border: 1px solid #243224; color: #d1d5db; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .btn-tool:hover { background: #1f2a1f; color: #fff; border-color: #4ade80; }
 
     /* Профиль */
     .profile-container { position: fixed; top: 16px; right: 16px; z-index: 100; }
-    .avatar-btn { width: 44px; height: 44px; border-radius: 50%; background: #4ade80; color: #062006; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #86efac; box-shadow: 0 4px 15px rgba(0,0,0,0.6); user-select: none; }
-    .profile-dropdown { position: absolute; right: 0; top: 54px; background: #141814; border: 1px solid #283428; border-radius: 14px; padding: 16px; width: 230px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-    .profile-info { border-bottom: 1px solid #253125; padding-bottom: 10px; margin-bottom: 12px; }
+    .avatar-btn { width: 42px; height: 42px; border-radius: 50%; background: #4ade80; color: #062006; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #86efac; box-shadow: 0 4px 15px rgba(0,0,0,0.6); user-select: none; }
+    .profile-dropdown { position: absolute; right: 0; top: 52px; background: #111511; border: 1px solid #233023; border-radius: 14px; padding: 16px; width: 230px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+    .profile-info { border-bottom: 1px solid #202b20; padding-bottom: 10px; margin-bottom: 12px; }
     .profile-info .name { font-weight: 700; color: #fff; }
-    .profile-info .role-badge { font-size: 0.75rem; color: #86efac; margin-top: 4px; display: inline-block; background: #192419; padding: 3px 9px; border-radius: 12px; }
+    .profile-info .role-badge { font-size: 0.75rem; color: #86efac; margin-top: 4px; display: inline-block; background: #172217; padding: 3px 9px; border-radius: 12px; }
 
     /* Узлы на доске */
-    .board-node { position: absolute; background: rgba(20, 25, 20, 0.95); border: 1px solid #2b382b; border-radius: 14px; padding: 14px 18px; min-width: 200px; cursor: grab; user-select: none; box-shadow: 0 10px 25px rgba(0,0,0,0.7); z-index: 2; transition: border-color 0.2s; }
+    .board-node { position: absolute; background: rgba(17, 22, 17, 0.95); border: 1px solid #253325; border-radius: 14px; padding: 14px 18px; min-width: 200px; cursor: grab; user-select: none; box-shadow: 0 10px 25px rgba(0,0,0,0.7); z-index: 2; transition: border-color 0.2s; }
     .board-node:hover { border-color: #4ade80; }
     .board-node.node-folder { border-left: 5px solid #3b82f6; }
     .board-node.node-doc { border-left: 5px solid #4ade80; }
-    .node-type { font-size: 0.7rem; color: #8fa38f; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; }
-    .node-title { font-size: 0.95rem; font-weight: 600; color: #f3f4f6; }
+    .board-node.is-yellow { border-color: #eab308 !important; background: rgba(42, 35, 10, 0.95); }
+    .node-type { font-size: 0.68rem; color: #8fa38f; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; }
+    .node-title { font-size: 0.92rem; font-weight: 600; color: #f3f4f6; }
+    .is-yellow .node-title { color: #fef08a; }
 
-    /* Контекстное Меню ПКМ */
-    #context-menu { position: fixed; background: #161b16; border: 1px solid #2b382b; border-radius: 12px; padding: 6px; min-width: 170px; display: none; z-index: 5000; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
-    .ctx-item { padding: 9px 12px; font-size: 0.85rem; color: #e2e8f0; border-radius: 8px; cursor: pointer; }
-    .ctx-item:hover { background: #222b22; color: #86efac; }
-    .ctx-item.danger:hover { background: #3b1818; color: #f87171; }
+    /* Контекстное меню ПКМ */
+    #context-menu { position: fixed; background: #121712; border: 1px solid #253325; border-radius: 12px; padding: 6px; min-width: 180px; display: none; z-index: 6000; box-shadow: 0 10px 25px rgba(0,0,0,0.9); }
+    .ctx-item { padding: 9px 12px; font-size: 0.85rem; color: #e2e8f0; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .ctx-item:hover { background: #1c261c; color: #86efac; }
+    .ctx-item.danger:hover { background: #381616; color: #f87171; }
 
-    /* Центральные всплывающие окна */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 3500; }
-    .modal-box { background: #141814; border: 1px solid #283428; border-radius: 18px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9); }
+    /* Всплывающие окна */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 4000; }
+    .modal-box { background: #111511; border: 1px solid #233023; border-radius: 18px; padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9); }
     .modal-box h3 { font-size: 1.1rem; color: #fff; margin-bottom: 14px; }
 
-    /* Редактор Документа */
-    #editor-modal { position: fixed; inset: 0; background: #0b0d0b; display: none; z-index: 3000; flex-direction: column; }
-    .editor-header { height: 60px; background: #121612; border-bottom: 1px solid #222b22; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+    /* Таблица Лидеров / Админки */
+    .custom-table { width: 100%; border-collapse: collapse; margin-top: 10px; color: #fff; font-size: 0.85rem; }
+    .custom-table th, .custom-table td { border: 1px solid #202b20; padding: 10px; text-align: left; }
+    .custom-table th { background: #161d16; color: #86efac; }
+
+    /* Редактор Документов */
+    #editor-modal { position: fixed; inset: 0; background: #080a08; display: none; z-index: 3500; flex-direction: column; }
+    .editor-header { height: 60px; background: #101410; border-bottom: 1px solid #1f2a1f; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
     .editor-body { flex: 1; display: flex; overflow: hidden; }
-    .editor-left { flex: 0 0 380px; padding: 24px; overflow-y: auto; background: #0f130f; border-right: 1px solid #222b22; }
-    .editor-right { flex: 1; background: #141814; padding: 30px; display: flex; justify-content: center; overflow-y: auto; position: relative; }
+    .editor-left { flex: 0 0 380px; padding: 24px; overflow-y: auto; background: #0d110d; border-right: 1px solid #1f2a1f; }
+    .editor-right { flex: 1; background: #121612; padding: 30px; display: flex; justify-content: center; overflow-y: auto; position: relative; }
 
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 0.78rem; color: #9ca3af; margin-bottom: 6px; font-weight: 500; }
-    .form-control { width: 100%; background: #161c16; border: 1px solid #273427; border-radius: 10px; padding: 10px; color: #fff; font-size: 0.88rem; outline: none; }
+    .form-control { width: 100%; background: #141a14; border: 1px solid #222e22; border-radius: 10px; padding: 10px; color: #fff; font-size: 0.88rem; outline: none; }
     .form-control:focus { border-color: #4ade80; }
     textarea.form-control { resize: vertical; min-height: 80px; }
 
-    /* Интерактивный Бланк Документа */
-    .paper-doc { width: 100%; max-width: 650px; background: #ffffff; color: #000; padding: 45px; border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); position: relative; min-height: 880px; }
-
-    /* Двигаемые элементы на бланке */
-    .draggable-block { position: absolute; border: 1px dashed transparent; padding: 6px; cursor: move; user-select: none; transition: border-color 0.2s; }
-    .draggable-block:hover { border-color: #4ade80; }
-    .draggable-block.active-block { border-color: #2563eb; background: rgba(37, 99, 235, 0.03); }
-
-    .align-btns { display: flex; gap: 4px; margin-top: 6px; }
-    .btn-align { background: #1a231a; border: 1px solid #2b3a2b; color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; cursor: pointer; }
-    .btn-align:hover { background: #283828; }
+    /* Печатный Бланк УМВД */
+    .paper-doc { width: 100%; max-width: 650px; background: #ffffff; color: #000; padding: 50px; border-radius: 2px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); position: relative; min-height: 900px; font-family: 'Times New Roman', serif; }
+    .doc-black-line { border-bottom: 2px solid #000; margin: 12px 0; }
+    .doc-yellow-highlight { background-color: #fef08a; padding: 2px 4px; border-radius: 3px; color: #854d0e; font-weight: bold; }
   </style>
 </head>
 <body>
 
-  <!-- Авторизация -->
+  <div id="dots-bg"></div>
+
+  <!-- Окно Авторизации / Регистрации -->
   <div id="auth-screen">
     <div class="auth-card">
-      <h1>УМВД ЭДО</h1>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Вход</div>
+        <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Регистрация</div>
+      </div>
+      <h1 id="auth-title">Вход в систему</h1>
       <input type="text" id="auth-username" placeholder="Логин (Никнейм)">
       <input type="password" id="auth-password" placeholder="Пароль">
-      <div class="auth-btns">
-        <button class="btn-green" onclick="handleAuth('/api/login')">Войти</button>
-        <button class="btn-outline" onclick="handleAuth('/api/register')">Регистрация</button>
-      </div>
+      <button class="btn-green" id="auth-submit-btn" onclick="submitAuth()">Войти</button>
     </div>
   </div>
 
-  <!-- Главный стол с нормальным средним обзором -->
+  <!-- Главное меню доски -->
   <div id="board-viewport">
     <div class="top-bar">
       <div id="leader-tools" style="display:none; gap:10px;">
-        <button class="btn-tool" onclick="openCreateModal('folder')">+ Тема</button>
-        <button class="btn-tool" onclick="openCreateModal('doc')">+ Бумага</button>
+        <button class="btn-tool" onclick="openLeaderModal()">👑 Панель Лидеров</button>
+        <button class="btn-tool" onclick="openCreateModal('folder')">+ Отдел</button>
+        <button class="btn-tool" onclick="openCreateModal('doc')">+ Документ</button>
       </div>
-      <button class="btn-tool" onclick="resetZoom()">🎯 В центр</button>
+      <button class="btn-tool" onclick="resetZoom()">🎯 По центру</button>
       <span id="linking-banner" style="display:none; color:#86efac; font-size:0.8rem; font-weight:600; padding-left:10px;">Выберите узел для соединения...</span>
     </div>
 
-    <!-- Профиль -->
+    <!-- Профиль справа -->
     <div class="profile-container">
       <div class="avatar-btn" id="avatar-btn" onclick="toggleProfileMenu()">U</div>
       <div class="profile-dropdown" id="profile-dropdown">
@@ -123,7 +133,7 @@
           <div class="role-badge" id="prof-role">Обычный пользователь</div>
           <div style="font-size: 0.72rem; color: #6b7280; margin-top: 5px;">UID: <span id="prof-uid">1</span></div>
         </div>
-        <button class="btn-tool" id="btn-admin-modal" style="width:100%; margin-bottom: 8px; display:none;" onclick="openAdminModal()">👑 Админ-панель</button>
+        <button class="btn-tool" id="btn-admin-modal" style="width:100%; margin-bottom: 8px; display:none;" onclick="openAdminModal()">⚙️ Админ-панель</button>
         <button class="btn-tool" style="width:100%; color:#f87171;" onclick="logout()">Выйти</button>
       </div>
     </div>
@@ -136,36 +146,60 @@
   <!-- Контекстное Меню ПКМ -->
   <div id="context-menu">
     <div class="ctx-item" onclick="startLinkingProcess()">🔗 Соединить с...</div>
+    <div class="ctx-item" onclick="toggleYellowHighlight()">🟨 Выделить (Шаблон)</div>
     <div class="ctx-item" onclick="renameNodePrompt()">✏️ Переименовать</div>
     <div class="ctx-item danger" id="ctx-delete-node" onclick="deleteNodeAction()">🗑️ Удалить</div>
   </div>
 
-  <!-- Модалка создания -->
+  <!-- Модалка создания элементов -->
   <div class="modal-overlay" id="create-modal">
     <div class="modal-box">
-      <h3 id="create-modal-title">Создать элемент</h3>
+      <h3 id="create-modal-title">Создать узел</h3>
       <div class="form-group">
         <label>Название</label>
         <input type="text" id="create-node-name" class="form-control" placeholder="Введите название...">
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
         <button class="btn-outline" onclick="closeCreateModal()">Отмена</button>
-        <button class="btn-green" onclick="submitCreateNode()">Создать</button>
+        <button class="btn-green" style="width:auto;" onclick="submitCreateNode()">Создать</button>
       </div>
     </div>
   </div>
 
-  <!-- Модалка Админки -->
+  <!-- Панель Лидеров -->
+  <div class="modal-overlay" id="leader-modal">
+    <div class="modal-box" style="max-width: 560px;">
+      <h3>👑 Панель Управления Бланками</h3>
+      <p style="font-size:0.8rem; color:#9ca3af; margin-bottom:12px;">Выберите документ из списка для настройки шаблона и желтых подсветок:</p>
+      <div style="max-height: 260px; overflow-y: auto;">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Тип</th>
+              <th>Название</th>
+              <th>Действие</th>
+            </tr>
+          </thead>
+          <tbody id="leader-docs-list"></tbody>
+        </table>
+      </div>
+      <div style="margin-top: 18px; text-align: right;">
+        <button class="btn-outline" onclick="document.getElementById('leader-modal').style.display='none'">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Админ-Панель -->
   <div class="modal-overlay" id="admin-modal">
     <div class="modal-box" style="max-width: 520px;">
-      <h3>Управление пользователями</h3>
+      <h3>⚙️ Администрирование</h3>
       <div style="max-height: 280px; overflow-y: auto;">
-        <table style="width:100%; border-collapse:collapse; color:#fff; font-size:0.85rem;">
+        <table class="custom-table">
           <thead>
-            <tr style="border-bottom:1px solid #283428; text-align:left;">
-              <th style="padding:8px;">UID</th>
-              <th>Ник</th>
-              <th>Роль</th>
+            <tr>
+              <th>UID</th>
+              <th>Никнейм</th>
+              <th>Статус</th>
               <th>Действие</th>
             </tr>
           </thead>
@@ -184,22 +218,22 @@
       <span id="ed-breadcrumb" style="color:#86efac; font-weight:600;">Документ</span>
       <div style="display:flex; gap:10px;">
         <button class="btn-tool" style="background:#2563eb; color:#fff;" onclick="downloadPDF()">📥 Скачать PDF</button>
-        <button class="btn-outline" style="color:#f87171; border-color:#3b1818;" onclick="closeEditorWithoutSaving()">✕ Закрыть (без сохранения)</button>
+        <button class="btn-outline" style="color:#f87171; border-color:#381616;" onclick="closeEditorWithoutSaving()">✕ Закрыть (без сохранения)</button>
       </div>
     </div>
     <div class="editor-body">
       <div class="editor-left">
-        <div id="leader-editor-controls" style="display:none; background:#162016; border:1px dashed #4ade80; padding:14px; border-radius:12px; margin-bottom:18px;">
-          <h4 style="font-size:0.82rem; color:#86efac; margin-bottom:10px;">👑 Настройки Лидера</h4>
+        <div id="leader-editor-controls" style="display:none; background:#141d14; border:1px dashed #4ade80; padding:12px; border-radius:12px; margin-bottom:16px;">
+          <h4 style="font-size:0.8rem; color:#86efac; margin-bottom:8px;">👑 Настройки шаблона</h4>
           <div class="form-group">
-            <label>Загрузить изображение (Печать / Герб)</label>
+            <label>Добавить фото (Печать/Герб)</label>
             <input type="file" accept="image/*" class="form-control" onchange="uploadImageFromFile(event)">
           </div>
           <div id="images-list"></div>
         </div>
 
         <div class="form-group">
-          <label>Название документа</label>
+          <label>Заголовок документа</label>
           <input type="text" id="inp-title" class="form-control" oninput="updatePaper()">
         </div>
         <div class="form-group">
@@ -207,7 +241,7 @@
           <input type="text" id="inp-code" class="form-control" oninput="updatePaper()">
         </div>
         <div class="form-group">
-          <label>Преамбула</label>
+          <label>Преамбула (Текст до сути)</label>
           <textarea id="inp-intro" class="form-control" oninput="updatePaper()"></textarea>
         </div>
         <div class="form-group">
@@ -215,7 +249,7 @@
           <textarea id="inp-main" class="form-control" style="min-height: 100px;" oninput="updatePaper()"></textarea>
         </div>
         <div class="form-group">
-          <label>Автор (ФИО)</label>
+          <label>ФИО Составителя (Для автоподписи)</label>
           <input type="text" id="inp-author" placeholder="Павел Аграбейко" class="form-control" oninput="updatePaper()">
         </div>
         <div class="form-group">
@@ -227,49 +261,35 @@
           <input type="text" id="inp-date" class="form-control" oninput="updatePaper()">
         </div>
 
-        <button class="btn-green" style="width:100%; margin-top:10px;" onclick="saveEditorData()">💾 Сохранить изменения</button>
+        <button class="btn-green" onclick="saveEditorData()">💾 Сохранить изменения</button>
       </div>
 
       <div class="editor-right">
-        <!-- Полотно Бланка -->
+        <!-- Бланк Документа -->
         <div class="paper-doc" id="paper-doc">
-          
-          <!-- Двигаемый Блок: Шапка -->
-          <div class="draggable-block" id="block-header" style="top: 30px; left: 40px; width: 570px;">
-            <div id="p-header-text" style="text-align: center; font-size: 11pt; font-weight: bold; text-transform: uppercase; line-height: 1.3;">
-              Управление Министерства Внутренних Дел<br>по Ленинградской области<br>
-              <small id="p-code" style="font-weight: normal; font-size: 9pt;">УМВД-RES-001</small>
-            </div>
-            <div class="align-btns">
-              <button class="btn-align" onclick="setAlign('p-header-text', 'left')">⬅️</button>
-              <button class="btn-align" onclick="setAlign('p-header-text', 'center')">↔️</button>
-              <button class="btn-align" onclick="setAlign('p-header-text', 'right')">➡️</button>
-            </div>
+          <div style="text-align: center; font-size: 11pt; font-weight: bold; text-transform: uppercase;">
+            Управление Министерства Внутренних Дел<br>по Ленинградской области<br>
+            <small id="p-code" style="font-weight: normal; font-size: 9pt;">УМВД-RES-001</small>
           </div>
 
-          <!-- Двигаемый Блок: Изображения -->
-          <div class="draggable-block" id="block-images" style="top: 110px; left: 40px; width: 570px; display: flex; justify-content: center; gap: 15px;">
-            <div id="p-images-box" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+          <div id="p-images-box" style="display: flex; justify-content: center; gap: 15px; margin: 12px 0;"></div>
+          <div class="doc-black-line"></div>
+
+          <div style="font-size: 11pt; line-height: 1.5;">
+            <h3 id="p-title-head" style="font-size: 13pt; margin: 15px 0; text-align: center; text-transform: uppercase;">ПОСТАНОВЛЕНИЕ</h3>
+            <p id="p-intro" style="margin-bottom: 12px; text-align: justify;"></p>
+            <p id="p-main" style="white-space: pre-line; text-align: justify;"></p>
           </div>
 
-          <!-- Двигаемый Блок: Заголовок и Текст -->
-          <div class="draggable-block" id="block-content" style="top: 220px; left: 40px; width: 570px;">
-            <h4 id="p-title-head" style="font-size: 12pt; margin-bottom: 12px; text-align: center; text-transform: uppercase;">ПОСТАНОВЛЕНИЕ</h4>
-            <p id="p-intro" style="font-size: 11pt; line-height: 1.4; margin-bottom: 12px; text-align: justify;"></p>
-            <p id="p-main" style="font-size: 11pt; line-height: 1.4; white-space: pre-line; text-align: justify;"></p>
-          </div>
-
-          <!-- Двигаемый Блок: Подпись -->
-          <div class="draggable-block" id="block-signature" style="top: 720px; left: 40px; width: 570px; display: flex; justify-content: space-between; align-items: flex-end;">
+          <div style="margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10pt;">
             <div>
               <strong id="p-role">Начальник УМВД</strong><br>
-              <span id="p-author">П. Аграбейко</span>
+              <span id="p-author" style="font-size:11pt; font-weight:bold;">П. Аграбейко</span>
             </div>
             <div>
               <span id="p-date">14.09.2026</span>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -278,8 +298,8 @@
   <script>
     let currentUser = null;
     let store = [];
-    // Средний масштаб (чтобы много всего помещалось)
-    let scale = 0.85, panX = window.innerWidth / 6, panY = window.innerHeight / 6; 
+    let currentAuthMode = 'login';
+    let scale = 0.8, panX = window.innerWidth / 5, panY = window.innerHeight / 5;
     let editingDocId = null;
     let currentImages = [];
 
@@ -292,6 +312,29 @@
     const svg = document.getElementById('connections-svg');
     const contextMenu = document.getElementById('context-menu');
 
+    // Авторизация / Регистрация
+    function switchAuthTab(mode) {
+      currentAuthMode = mode;
+      document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+      document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+      document.getElementById('auth-title').innerText = mode === 'login' ? 'Вход в систему' : 'Регистрация';
+      document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Войти' : 'Зарегистрироваться';
+    }
+
+    async function submitAuth() {
+      const username = document.getElementById('auth-username').value;
+      const password = document.getElementById('auth-password').value;
+      const url = currentAuthMode === 'login' ? '/api/login' : '/api/register';
+
+      const res = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.success) checkAuthStatus();
+      else alert(data.error || 'Ошибка входа');
+    }
+
     async function checkAuthStatus() {
       const res = await fetch('/api/me');
       const data = await res.json();
@@ -303,18 +346,6 @@
       } else {
         document.getElementById('auth-screen').style.display = 'flex';
       }
-    }
-
-    async function handleAuth(url) {
-      const username = document.getElementById('auth-username').value;
-      const password = document.getElementById('auth-password').value;
-      const res = await fetch(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      if (data.success) checkAuthStatus();
-      else alert(data.error || 'Ошибка');
     }
 
     async function logout() {
@@ -336,9 +367,6 @@
       if (currentUser.is_leader || currentUser.role === 'ADMIN') {
         document.getElementById('leader-tools').style.display = 'flex';
         document.getElementById('leader-editor-controls').style.display = 'block';
-        enableBlockDragging();
-      } else {
-        document.getElementById('ctx-delete-node').style.display = 'none';
       }
 
       if (currentUser.role === 'ADMIN') {
@@ -351,6 +379,7 @@
       el.style.display = el.style.display === 'block' ? 'none' : 'block';
     }
 
+    // Загрузка Доски
     async function loadBoard() {
       const res = await fetch('/api/board');
       store = await res.json();
@@ -372,12 +401,12 @@
       store.forEach(node => {
         const div = document.createElement('div');
         const isDoc = node.type === 'doc';
-        div.className = `board-node ${isDoc ? 'node-doc' : 'node-folder'}`;
+        div.className = `board-node ${isDoc ? 'node-doc' : 'node-folder'} ${node.isYellow ? 'is-yellow' : ''}`;
         div.style.left = node.x + 'px';
         div.style.top = node.y + 'px';
 
         div.innerHTML = `
-          <div class="node-type">${isDoc ? '📄 Документ' : '📁 Отдел / Тема'}</div>
+          <div class="node-type">${isDoc ? '📄 Документ' : '📁 Отдел'}</div>
           <div class="node-title">${node.title}</div>
         `;
 
@@ -430,6 +459,15 @@
       });
     }
 
+    // Выделение Желтым для Лидеров
+    function toggleYellowHighlight() {
+      contextMenu.style.display = 'none';
+      if (!selectedNodeForCtx) return;
+      selectedNodeForCtx.isYellow = !selectedNodeForCtx.isYellow;
+      saveBoard();
+      renderBoard();
+    }
+
     function startLinkingProcess() {
       contextMenu.style.display = 'none';
       if (!selectedNodeForCtx) return;
@@ -439,7 +477,7 @@
 
     function openCreateModal(type) {
       targetCreateType = type;
-      document.getElementById('create-modal-title').innerText = type === 'doc' ? 'Создать Документ' : 'Создать Тему';
+      document.getElementById('create-modal-title').innerText = type === 'doc' ? 'Создать Документ' : 'Создать Отдел';
       document.getElementById('create-node-name').value = '';
       document.getElementById('create-modal').style.display = 'flex';
     }
@@ -454,11 +492,9 @@
           x: (-panX + window.innerWidth / 2) / scale,
           y: (-panY + window.innerHeight / 2) / scale,
           code: 'УМВД-00' + (store.length + 1),
-          intro: '', main: '', author: '', role: '', date: new Date().toLocaleDateString(),
-          images: [], blocks: {
-            header: { top: 30, left: 40 }, images: { top: 110, left: 40 },
-            content: { top: 220, left: 40 }, signature: { top: 720, left: 40 }
-          }
+          intro: '[Укажите основание документа]', main: '[Введите решение или текст постановления]',
+          author: '', role: '[Укажите должность]', date: new Date().toLocaleDateString(),
+          images: []
         });
         saveBoard(); renderBoard();
       }
@@ -480,27 +516,76 @@
     }
 
     function updateTransform() { board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
-    function resetZoom() { scale = 0.85; panX = window.innerWidth / 6; panY = window.innerHeight / 6; updateTransform(); }
+    function resetZoom() { scale = 0.8; panX = window.innerWidth / 5; panY = window.innerHeight / 5; updateTransform(); }
 
     viewport.addEventListener('wheel', (e) => {
       e.preventDefault();
-      scale = e.deltaY < 0 ? Math.min(scale * 1.08, 2.0) : Math.max(scale / 1.08, 0.4);
+      scale = e.deltaY < 0 ? Math.min(scale * 1.08, 2.0) : Math.max(scale / 1.08, 0.3);
       updateTransform();
     }, { passive: false });
 
     window.addEventListener('click', () => { contextMenu.style.display = 'none'; });
 
-    // Автоматическая подпись (Имя Фамилия -> И. Фамилия)
+    // Панель Лидера
+    function openLeaderModal() {
+      const list = document.getElementById('leader-docs-list');
+      list.innerHTML = '';
+
+      store.filter(n => n.type === 'doc').forEach(doc => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>📄 Документ</td>
+          <td>${doc.title}</td>
+          <td><button class="btn-tool" onclick="document.getElementById('leader-modal').style.display='none'; openEditor('${doc.id}')">Изменить</button></td>
+        `;
+        list.appendChild(tr);
+      });
+
+      document.getElementById('leader-modal').style.display = 'flex';
+    }
+
+    // Панель Админа
+    async function openAdminModal() {
+      const res = await fetch('/api/admin/users');
+      const users = await res.json();
+      const list = document.getElementById('admin-users-list');
+      list.innerHTML = '';
+
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td>${u.is_leader ? '👑 Лидер' : 'Пользователь'}</td>
+          <td>
+            <button class="btn-tool" onclick="toggleLeader(${u.id}, ${!u.is_leader})">
+              ${u.is_leader ? 'Снять Лидера' : 'Выдать Лидера'}
+            </button>
+          </td>
+        `;
+        list.appendChild(tr);
+      });
+
+      document.getElementById('admin-modal').style.display = 'flex';
+    }
+
+    async function toggleLeader(userId, isLeader) {
+      await fetch('/api/admin/toggle-leader', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, isLeader })
+      });
+      openAdminModal();
+    }
+
+    // Автоподпись (Павел Аграбейко -> П. Аграбейко)
     function autoFormatSignature(nameStr) {
-      if (!nameStr) return '';
+      if (!nameStr) return 'П. Аграбейко';
       const parts = nameStr.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        return `${parts[0].charAt(0).toUpperCase()}. ${parts[1]}`;
-      }
+      if (parts.length >= 2) return `${parts[0].charAt(0).toUpperCase()}. ${parts[1]}`;
       return nameStr;
     }
 
-    // Редактирование Документа
+    // Редактирование документа
     function openEditor(id) {
       const doc = store.find(n => n.id === id);
       if (!doc) return;
@@ -516,23 +601,9 @@
       document.getElementById('inp-role').value = doc.role || '';
       document.getElementById('inp-date').value = doc.date || '';
 
-      // Применяем позиции блоков
-      if (doc.blocks) {
-        applyBlockPos('block-header', doc.blocks.header);
-        applyBlockPos('block-images', doc.blocks.images);
-        applyBlockPos('block-content', doc.blocks.content);
-        applyBlockPos('block-signature', doc.blocks.signature);
-      }
-
       renderImageControls();
       updatePaper();
       document.getElementById('editor-modal').style.display = 'flex';
-    }
-
-    function applyBlockPos(id, pos) {
-      if (!pos) return;
-      const el = document.getElementById(id);
-      if (el) { el.style.top = pos.top + 'px'; el.style.left = pos.left + 'px'; }
     }
 
     function uploadImageFromFile(e) {
@@ -540,7 +611,7 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = function(evt) {
-          currentImages.push({ url: evt.target.result, width: 85 });
+          currentImages.push({ url: evt.target.result, width: 80 });
           renderImageControls();
           updatePaper();
         };
@@ -555,19 +626,25 @@
         const div = document.createElement('div');
         div.style.cssText = 'display:flex; gap:6px; margin-top:6px; align-items:center;';
         div.innerHTML = `
-          <input type="number" class="form-control" style="width:100px;" value="${img.width}" oninput="currentImages[${idx}].width=this.value; updatePaper();">
+          <input type="number" class="form-control" style="width:80px;" value="${img.width}" oninput="currentImages[${idx}].width=this.value; updatePaper();">
           <span style="font-size:0.75rem; color:#aaa;">px</span>
-          <button style="color:#f87171; background:none; border:none; cursor:pointer; font-weight:bold;" onclick="currentImages.splice(${idx},1); renderImageControls(); updatePaper();">✕</button>
+          <button style="color:#f87171; background:none; border:none; cursor:pointer;" onclick="currentImages.splice(${idx},1); renderImageControls(); updatePaper();">✕</button>
         `;
         container.appendChild(div);
       });
     }
 
+    function formatYellowText(text) {
+      if (!text) return '';
+      return text.replace(/\[(.*?)\]/g, '<span class="doc-yellow-highlight">[$1]</span>');
+    }
+
     function updatePaper() {
       document.getElementById('p-title-head').innerText = (document.getElementById('inp-title').value || 'ДОКУМЕНТ').toUpperCase();
       document.getElementById('p-code').innerText = document.getElementById('inp-code').value || 'УМВД-000';
-      document.getElementById('p-intro').innerText = document.getElementById('inp-intro').value;
-      document.getElementById('p-main').innerText = document.getElementById('inp-main').value;
+      
+      document.getElementById('p-intro').innerHTML = formatYellowText(document.getElementById('inp-intro').value);
+      document.getElementById('p-main').innerHTML = formatYellowText(document.getElementById('inp-main').value);
       
       const rawAuthor = document.getElementById('inp-author').value;
       document.getElementById('p-author').innerText = autoFormatSignature(rawAuthor);
@@ -581,24 +658,18 @@
         if (img.url) {
           const imageEl = document.createElement('img');
           imageEl.src = img.url;
-          imageEl.style.width = (img.width || 85) + 'px';
+          imageEl.style.width = (img.width || 80) + 'px';
           imageEl.style.objectFit = 'contain';
           imgBox.appendChild(imageEl);
         }
       });
     }
 
-    function setAlign(targetId, align) {
-      document.getElementById(targetId).style.textAlign = align;
-    }
-
-    // Закрытие без сохранения
     function closeEditorWithoutSaving() {
       document.getElementById('editor-modal').style.display = 'none';
       loadBoard();
     }
 
-    // Явное сохранение
     function saveEditorData() {
       const doc = store.find(n => n.id === editingDocId);
       if (doc) {
@@ -611,22 +682,10 @@
         doc.date = document.getElementById('inp-date').value;
         doc.images = currentImages;
 
-        doc.blocks = {
-          header: getBlockPos('block-header'),
-          images: getBlockPos('block-images'),
-          content: getBlockPos('block-content'),
-          signature: getBlockPos('block-signature')
-        };
-
         saveBoard();
         renderBoard();
-        alert('Изменения успешно сохранены!');
+        alert('Сохранено!');
       }
-    }
-
-    function getBlockPos(id) {
-      const el = document.getElementById(id);
-      return { top: parseInt(el.style.top || 0), left: parseInt(el.style.left || 0) };
     }
 
     function downloadPDF() {
@@ -640,39 +699,7 @@
       }).from(element).save();
     }
 
-    // Таскание блоков Лидерами внутри бланка
-    function enableBlockDragging() {
-      const blocks = document.querySelectorAll('.draggable-block');
-      blocks.forEach(block => {
-        let isDragging = false, startX, startY, origLeft, origTop;
-
-        block.addEventListener('mousedown', (e) => {
-          if (e.target.tagName === 'BUTTON') return;
-          isDragging = true;
-          startX = e.clientX; startY = e.clientY;
-          origLeft = block.offsetLeft; origTop = block.offsetTop;
-          block.classList.add('active-block');
-
-          const onMouseMove = (me) => {
-            if (!isDragging) return;
-            block.style.left = (origLeft + me.clientX - startX) + 'px';
-            block.style.top = (origTop + me.clientY - startY) + 'px';
-          };
-
-          const onMouseUp = () => {
-            isDragging = false;
-            block.classList.remove('active-block');
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-          };
-
-          document.addEventListener('mousemove', onMouseMove);
-          document.addEventListener('mouseup', onMouseUp);
-        });
-      });
-    }
-
-    // Перемещение карточек узлов по столу
+    // Драг карточек
     let activeDragNode = null, dragOffset = { x: 0, y: 0 };
     function startDragNode(e, node) {
       activeDragNode = node;
