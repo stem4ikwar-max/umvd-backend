@@ -14,10 +14,21 @@ function saveUsers(users) {
   localStorage.setItem('usersDB', JSON.stringify(users));
 }
 
+// Загрузка документов/отделов
+function getBoardDocs() {
+  const saved = localStorage.getItem('boardDocs');
+  return saved ? JSON.parse(saved) : [];
+}
+
+function saveBoardDocs(docs) {
+  localStorage.setItem('boardDocs', JSON.stringify(docs));
+}
+
 let currentUser = null;
 let currentAuthMode = 'login';
 
 let currentDocData = {
+  id: null,
   code: 'LSPD-MIS-SD-001',
   author: 'Skeptic Drugonight',
   role: 'Chief of the Los Santos Police Department',
@@ -29,7 +40,7 @@ let currentDocData = {
   ]
 };
 
-// Табы входа/регистрации
+// Переключение табов входа/регистрации
 function switchAuthTab(mode) {
   currentAuthMode = mode;
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -38,7 +49,7 @@ function switchAuthTab(mode) {
   document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Войти' : 'Зарегистрироваться';
 }
 
-// Авторизация и Валидация
+// Вход / Регистрация
 function submitAuth() {
   const username = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value.trim();
@@ -55,7 +66,6 @@ function submitAuth() {
     }
     currentUser = user;
   } else {
-    // Валидация
     if (/[а-яА-ЯёЁ]/.test(username)) {
       return alert('Ошибка: Русские буквы в логине запрещены!');
     }
@@ -78,15 +88,16 @@ function submitAuth() {
     currentUser = newUser;
   }
 
-  // Очистка полей и вход
   document.getElementById('auth-username').value = '';
   document.getElementById('auth-password').value = '';
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('board-viewport').style.display = 'block';
+  
   updateProfileUI();
+  renderBoard();
 }
 
-// Выход из системы
+// Выход
 function logout() {
   currentUser = null;
   document.getElementById('auth-screen').style.display = 'flex';
@@ -108,56 +119,72 @@ function updateProfileUI() {
   document.getElementById('avatar-btn').innerText = currentUser.username.charAt(0).toUpperCase();
 
   const isPowerUser = currentUser.role === 'ADMIN' || currentUser.is_leader;
-  
   document.getElementById('leader-tools').style.display = isPowerUser ? 'flex' : 'none';
   document.getElementById('btn-top-admin').style.display = currentUser.role === 'ADMIN' ? 'block' : 'none';
 }
 
-// Модалки
-function openLeaderModal() { 
-  document.getElementById('leader-modal').style.display = 'flex'; 
-}
+// --- ОТРИСОВКА ДОСКИ / ОТДЕЛОВ / ДОКУМЕНТОВ ---
+function renderBoard() {
+  const board = document.getElementById('board-container');
+  if (!board) return;
 
-function openAdminModal() {
-  if (currentUser.role !== 'ADMIN') return;
-  const list = document.getElementById('admin-users-list');
-  list.innerHTML = '';
-  const users = getUsers();
+  const docs = getBoardDocs();
+  board.innerHTML = '';
 
-  users.forEach(user => {
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid #282d37';
-    tr.innerHTML = `
-      <td style="padding:6px;">${user.id}</td>
-      <td style="padding:6px;">${user.username}</td>
-      <td style="padding:6px; color:#60a5fa;">${user.role}</td>
-      <td style="padding:6px;">${user.is_leader ? '👑 Да' : 'Нет'}</td>
-      <td style="padding:6px; text-align:right;">
-        ${user.id !== 1 ? `<button class="btn-tool" style="font-size:0.75rem;" onclick="toggleLeader(${user.id})">${user.is_leader ? 'Снять Лидера' : 'Выдать Лидерку'}</button>` : '<i>Главный Админ</i>'}
-      </td>
-    `;
-    list.appendChild(tr);
-  });
-
-  document.getElementById('admin-modal').style.display = 'flex';
-}
-
-function toggleLeader(userId) {
-  const users = getUsers();
-  const user = users.find(u => u.id === userId);
-  if (user) {
-    user.is_leader = !user.is_leader;
-    saveUsers(users);
-    openAdminModal();
-    if (currentUser.id === user.id) {
-      currentUser = user;
-      updateProfileUI();
-    }
+  if (docs.length === 0) {
+    board.innerHTML = '<div style="color:#6b7280; text-align:center; margin-top:50px;">Нет созданных документов. Нажмите "+ Создать документ"</div>';
+    return;
   }
+
+  docs.forEach(doc => {
+    const card = document.createElement('div');
+    card.className = 'section-block';
+    card.style.cursor = 'pointer';
+    card.style.margin = '10px';
+    card.style.padding = '15px';
+    card.style.background = '#15181e';
+
+    card.innerHTML = `
+      <div style="font-weight:bold; color:#60a5fa;">${doc.code}</div>
+      <div style="font-size:0.85rem; color:#ccc; margin-top:4px;">${doc.role} — ${doc.author}</div>
+      <button class="btn-tool" style="margin-top:8px; font-size:0.75rem;" onclick="openEditorForEdit(${doc.id})">👁️ Открыть документ</button>
+    `;
+    board.appendChild(card);
+  });
 }
 
-// Редактор
+// Открытие редактора для создания
 function openEditor() {
+  currentDocData = {
+    id: Date.now(),
+    code: 'LSPD-MIS-SD-001',
+    author: currentUser ? currentUser.username : 'Skeptic Drugonight',
+    role: 'Chief of the Los Santos Police Department',
+    sections: [
+      { title: 'Без заголовка', text: 'Введите текст...' }
+    ]
+  };
+
+  document.getElementById('inp-code').value = currentDocData.code;
+  document.getElementById('inp-author').value = currentDocData.author;
+  document.getElementById('inp-role').value = currentDocData.role;
+
+  document.getElementById('editor-modal').style.display = 'flex';
+  renderSectionBlocks();
+}
+
+// Открытие редактора для просмотра/редактирования
+function openEditorForEdit(docId) {
+  const docs = getBoardDocs();
+  const doc = docs.find(d => d.id === docId);
+  if (!doc) return;
+
+  currentDocData = JSON.parse(JSON.stringify(doc));
+
+  document.getElementById('inp-code').value = currentDocData.code;
+  document.getElementById('inp-author').value = currentDocData.author;
+  document.getElementById('inp-role').value = currentDocData.role;
+
   document.getElementById('editor-modal').style.display = 'flex';
   renderSectionBlocks();
 }
@@ -166,10 +193,28 @@ function closeEditor() {
   document.getElementById('editor-modal').style.display = 'none';
 }
 
-function resetZoom() {
-  alert('Зум сброшен');
+// Сохранение документа в общую базу
+function saveCurrentDoc() {
+  const docs = getBoardDocs();
+  const index = docs.findIndex(d => d.id === currentDocData.id);
+
+  currentDocData.code = document.getElementById('inp-code').value;
+  currentDocData.author = document.getElementById('inp-author').value;
+  currentDocData.role = document.getElementById('inp-role').value;
+
+  if (index !== -1) {
+    docs[index] = currentDocData;
+  } else {
+    docs.push(currentDocData);
+  }
+
+  saveBoardDocs(docs);
+  alert('Документ успешно сохранен!');
+  closeEditor();
+  renderBoard();
 }
 
+// --- УПРАВЛЕНИЕ СЕКЦИЯМИ БЛАНКА ---
 function renderSectionBlocks() {
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
@@ -222,6 +267,53 @@ function renderPaper() {
     secDiv.innerHTML += `<div style="text-align:justify; white-space:pre-line;">${sec.text}</div>`;
     paperRender.appendChild(secDiv);
   });
+}
+
+// Модалки Админки и Лидеров
+function openLeaderModal() { 
+  document.getElementById('leader-modal').style.display = 'flex'; 
+}
+
+function openAdminModal() {
+  if (currentUser.role !== 'ADMIN') return;
+  const list = document.getElementById('admin-users-list');
+  list.innerHTML = '';
+  const users = getUsers();
+
+  users.forEach(user => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #282d37';
+    tr.innerHTML = `
+      <td style="padding:6px;">${user.id}</td>
+      <td style="padding:6px;">${user.username}</td>
+      <td style="padding:6px; color:#60a5fa;">${user.role}</td>
+      <td style="padding:6px;">${user.is_leader ? '👑 Да' : 'Нет'}</td>
+      <td style="padding:6px; text-align:right;">
+        ${user.id !== 1 ? `<button class="btn-tool" style="font-size:0.75rem;" onclick="toggleLeader(${user.id})">${user.is_leader ? 'Снять Лидера' : 'Выдать Лидерку'}</button>` : '<i>Главный Админ</i>'}
+      </td>
+    `;
+    list.appendChild(tr);
+  });
+
+  document.getElementById('admin-modal').style.display = 'flex';
+}
+
+function toggleLeader(userId) {
+  const users = getUsers();
+  const user = users.find(u => u.id === userId);
+  if (user) {
+    user.is_leader = !user.is_leader;
+    saveUsers(users);
+    openAdminModal();
+    if (currentUser.id === user.id) {
+      currentUser = user;
+      updateProfileUI();
+    }
+  }
+}
+
+function resetZoom() {
+  alert('Зум сброшен');
 }
 
 function downloadPNG() {
