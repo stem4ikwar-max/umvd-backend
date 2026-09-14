@@ -13,7 +13,6 @@ body, html {
   overflow: hidden;
 }
 
-/* Фон с точками */
 #dots-bg {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
@@ -22,7 +21,6 @@ body, html {
   z-index: 0;
 }
 
-/* Авторизация */
 #auth-screen {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
@@ -79,7 +77,6 @@ input:focus {
   border-color: #60a5fa;
 }
 
-/* Кнопки */
 .btn-main {
   background: #2563eb;
   color: #fff;
@@ -117,7 +114,6 @@ input:focus {
 }
 .btn-tool:hover { background: #282d37; color: #fff; }
 
-/* Рабочая зона */
 #board-viewport {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
@@ -132,7 +128,6 @@ input:focus {
   z-index: 20;
 }
 
-/* Профиль */
 .profile-container {
   position: absolute;
   top: 16px; right: 16px;
@@ -171,7 +166,6 @@ input:focus {
   z-index: 1;
 }
 
-/* Модальные окна */
 .modal-overlay {
   display: none;
   position: fixed;
@@ -192,7 +186,6 @@ input:focus {
   box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
-/* Редактор документов */
 #editor-modal {
   display: none;
   position: fixed;
