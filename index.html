@@ -14,14 +14,14 @@
 
   <div id="dots-bg"></div>
 
-  <!-- Экран входа -->
+  <!-- Авторизация -->
   <div id="auth-screen">
     <div class="auth-card">
       <div class="auth-tabs">
         <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Вход</div>
         <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Регистрация</div>
       </div>
-      <h1 id="auth-title" style="font-size:1.2rem; margin-bottom:14px;">Вход в систему</h1>
+      <h1 id="auth-title" style="font-size:1.1rem; margin-bottom:14px; color:#fff;">Вход в систему</h1>
       <input type="text" id="auth-username" placeholder="Логин">
       <input type="password" id="auth-password" placeholder="Пароль">
       <button class="btn-main" id="auth-submit-btn" onclick="submitAuth()">Войти</button>
@@ -34,8 +34,7 @@
       <div id="leader-tools" style="display:none; gap:8px;">
         <button class="btn-tool" onclick="openLeaderModal()">👑 Панель Лидеров</button>
         <button class="btn-tool" id="btn-top-admin" style="display:none; color:#f6ad55;" onclick="openAdminModal()">⚙️ Админ-панель</button>
-        <button class="btn-tool" onclick="openCreateModal('folder')">+ Отдел</button>
-        <button class="btn-tool" onclick="openCreateModal('doc')">+ Документ</button>
+        <button class="btn-tool" onclick="openEditor()">+ Создать документ</button>
       </div>
       <button class="btn-tool" onclick="resetZoom()">🎯 Сброс зума</button>
     </div>
@@ -53,12 +52,10 @@
       </div>
     </div>
 
-    <div id="board-container">
-      <svg id="connections-svg"></svg>
-    </div>
+    <div id="board-container"></div>
   </div>
 
-  <!-- Редактор документа (Блочный как на фото 3) -->
+  <!-- Редактор документа -->
   <div id="editor-modal">
     <div class="editor-header">
       <span style="color:#60a5fa; font-weight:600;">Редактирование Документа</span>
@@ -68,28 +65,25 @@
       </div>
     </div>
     <div class="editor-body">
-      <!-- Левая часть (Блоки параметров) -->
+      <!-- Настройки слева -->
       <div class="editor-left">
-        
-        <!-- Красивая кнопка загрузки файла (Замена дефолтной) -->
         <div id="leader-img-upload" style="display:none; margin-bottom:16px;">
-          <label style="font-size:0.8rem; color:#9ca3af; font-weight:600; display:block; margin-bottom:6px;">Печать / Фото на бланк</label>
+          <label style="font-size:0.8rem; color:#9ca3af; font-weight:600; display:block; margin-bottom:6px;">Загрузить фото/печать (можно двигать на бланке)</label>
           <label class="custom-file-upload">
             <input type="file" accept="image/*" onchange="uploadImageFromFile(event)">
-            📁 Выбрать изображение
+            📁 Выбрать файл
           </label>
         </div>
 
         <div class="form-group">
-          <label>Код документа</label>
-          <input type="text" id="inp-code" class="form-control" placeholder="LSPD-MIS-SD-001" oninput="renderPaper()">
+          <label style="font-size:0.8rem; color:#9ca3af;">Код документа</label>
+          <input type="text" id="inp-code" class="form-control" value="LSPD-MIS-SD-001" oninput="renderPaper()">
         </div>
 
-        <!-- Контейнер динамических секций -->
+        <!-- Контейнер секций -->
         <div id="sections-container"></div>
 
-        <!-- Кнопки добавления новых секций -->
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; margin-bottom:15px;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 15px 0;">
           <button class="btn-tool" onclick="addSectionBlock('Без заголовка', '')">+ Текст</button>
           <button class="btn-tool" onclick="addSectionBlock('Установил', '')">+ Установил</button>
           <button class="btn-tool" onclick="addSectionBlock('Постановил', '')">+ Постановил</button>
@@ -98,18 +92,18 @@
         </div>
 
         <div class="form-group">
-          <label>ФИО Составителя</label>
-          <input type="text" id="inp-author" class="form-control" placeholder="Павел Аграбейко" oninput="renderPaper()">
+          <label style="font-size:0.8rem; color:#9ca3af;">ФИО Составителя</label>
+          <input type="text" id="inp-author" class="form-control" value="Skeptic Drugonight" oninput="renderPaper()">
         </div>
         <div class="form-group">
-          <label>Должность</label>
-          <input type="text" id="inp-role" class="form-control" placeholder="Начальник УМВД" oninput="renderPaper()">
+          <label style="font-size:0.8rem; color:#9ca3af;">Должность</label>
+          <input type="text" id="inp-role" class="form-control" value="Chief of the Los Santos Police Department" oninput="renderPaper()">
         </div>
 
         <button class="btn-main" id="btn-save-doc" style="margin-top:10px; display:none;" onclick="saveCurrentDoc()">💾 Сохранить изменения</button>
       </div>
 
-      <!-- Правая часть (Предпросмотр бланка) -->
+      <!-- Предпросмотр бланка справа -->
       <div class="editor-right">
         <div class="paper-doc" id="paper-doc">
           <div style="text-align: center; font-size: 10pt; font-weight: bold; text-transform: uppercase;">
@@ -117,30 +111,28 @@
             <small id="p-code" style="font-weight: normal; font-size: 8pt; color:#555;">LSPD-MIS-SD-001</small>
           </div>
 
-          <div class="doc-line" style="height:1px; background:#000; margin:12px 0;"></div>
+          <div style="height:1px; background:#000; margin:12px 0;"></div>
 
           <div id="paper-sections-render" style="font-size: 10pt; line-height: 1.5;"></div>
 
           <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 9pt;">
             <div>
-              <strong id="p-role">Начальник УМВД</strong><br>
-              <span id="p-author" style="font-size:10pt; font-weight:bold;">П. Аграбейко</span>
+              <strong id="p-role">Chief of the Los Santos Police Department</strong><br>
+              <span id="p-author" style="font-size:10pt; font-weight:bold;">Skeptic Drugonight</span>
             </div>
             <div>
-              <span id="p-date">14.09.2026</span>
+              <span id="p-date">01.01.2025</span>
             </div>
           </div>
-
-          <div id="images-container"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Модалки -->
+  <!-- Модалка Панели Лидера -->
   <div class="modal-overlay" id="leader-modal">
     <div class="modal-box" style="max-width: 500px;">
-      <h3 style="margin-bottom:10px;">👑 Панель Лидеров</h3>
+      <h3 style="margin-bottom:10px; color:#fff;">👑 Панель Лидеров</h3>
       <div style="max-height: 250px; overflow-y: auto;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; color:#fff;">
           <tbody id="leader-docs-list"></tbody>
@@ -152,18 +144,19 @@
     </div>
   </div>
 
+  <!-- Модалка Панели Админа -->
   <div class="modal-overlay" id="admin-modal">
-    <div class="modal-box" style="max-width: 550px;">
-      <h3 style="margin-bottom:12px;">⚙️ Панель Администратора</h3>
+    <div class="modal-box" style="max-width: 600px;">
+      <h3 style="margin-bottom:12px; color:#fff;">⚙️ Панель Администратора</h3>
       <div style="max-height: 300px; overflow-y: auto;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; color:#fff;">
           <thead>
-            <tr style="text-align:left; border-bottom:1px solid #282d37;">
+            <tr style="text-align:left; border-bottom:1px solid #282d37; color:#9ca3af;">
               <th style="padding:6px;">UID</th>
               <th style="padding:6px;">Логин</th>
               <th style="padding:6px;">Роль</th>
               <th style="padding:6px;">Лидер</th>
-              <th style="padding:6px;">Действие</th>
+              <th style="padding:6px; text-align:right;">Действие</th>
             </tr>
           </thead>
           <tbody id="admin-users-list"></tbody>
