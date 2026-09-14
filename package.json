@@ -1,16 +1,15 @@
 {
-  "name": "umvd-backend",
-  "version": "1.0.0",
-  "description": "Backend for UMVD blank generator",
+  "name": "umvd-doc-system",
+  "version": "5.0.0",
+  "description": "Электронный документооборот УМВД с авторизацией и ролями",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
     "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
+    "express-session": "^1.18.0",
     "sqlite3": "^5.1.7"
   }
 }
