@@ -1,15 +1,15 @@
 {
-  "name": "umvd-doc-system",
-  "version": "5.0.0",
-  "description": "Электронный документооборот УМВД с авторизацией и ролями",
-  "main": "index.js",
+  "name": "umvd-edo",
+  "version": "1.0.0",
+  "description": "Электронный документооборот УМВД",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "express": "^4.19.2",
-    "express-session": "^1.18.0",
-    "sqlite3": "^5.1.7"
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "sqlite3": "^5.1.6"
   }
 }
