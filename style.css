@@ -12,7 +12,6 @@ body {
   height: 100vh;
 }
 
-/* Фоновые точки */
 #dots-bg {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -21,11 +20,10 @@ body {
   z-index: 1;
 }
 
-/* Экран авторизации */
 #auth-screen {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(11, 13, 16, 0.9);
+  background: rgba(11, 13, 16, 0.95);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -52,6 +50,7 @@ body {
   padding: 8px;
   cursor: pointer;
   color: #6b7280;
+  font-weight: 500;
 }
 
 .auth-tab.active {
@@ -68,6 +67,10 @@ input, .form-control {
   color: #fff;
   margin-bottom: 10px;
   font-size: 0.85rem;
+  outline: none;
+}
+input:focus, .form-control:focus {
+  border-color: #3b82f6;
 }
 
 .btn-main {
@@ -80,6 +83,7 @@ input, .form-control {
   cursor: pointer;
   font-weight: 600;
 }
+.btn-main:hover { background: #1d4ed8; }
 
 .btn-outline {
   background: transparent;
@@ -89,6 +93,7 @@ input, .form-control {
   border-radius: 6px;
   cursor: pointer;
 }
+.btn-outline:hover { background: #181b20; }
 
 .btn-tool {
   background: #181b20;
@@ -99,8 +104,8 @@ input, .form-control {
   cursor: pointer;
   font-size: 0.85rem;
 }
+.btn-tool:hover { border-color: #3b82f6; }
 
-/* Шапка и Профиль */
 #board-viewport {
   position: relative;
   width: 100vw;
@@ -135,6 +140,7 @@ input, .form-control {
   justify-content: center;
   font-weight: bold;
   cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .profile-dropdown {
@@ -146,15 +152,15 @@ input, .form-control {
   border: 1px solid #282d37;
   border-radius: 10px;
   padding: 12px;
-  width: 180px;
+  width: 200px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
-/* Модальные окна (Админ, Лидер, Создание) */
 .modal-overlay {
-  display: none; /* Скрыты по умолчанию */
+  display: none;
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75);
   z-index: 500;
   justify-content: center;
   align-items: center;
@@ -168,9 +174,9 @@ input, .form-control {
   width: 90%;
 }
 
-/* Полноэкранный редактор документа */
+/* Редактор */
 #editor-modal {
-  display: none; /* Скрыт по умолчанию */
+  display: none;
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
   background: #0b0d10;
@@ -185,6 +191,7 @@ input, .form-control {
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
+  background: #15181e;
 }
 
 .editor-body {
@@ -210,21 +217,22 @@ input, .form-control {
   overflow-y: auto;
 }
 
-/* Бумажный бланк A4 */
 .paper-doc {
   background: #ffffff;
   color: #000000;
   width: 500px;
-  min-height: 700px;
+  min-height: 650px;
   padding: 40px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.5);
   position: relative;
 }
 
-/* Кастомная кнопка выбора файла */
+/* Кастомный upload */
 .custom-file-upload {
-  display: inline-block;
-  padding: 8px 16px;
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 10px;
   cursor: pointer;
   background: #1e232d;
   border: 1px solid #282d37;
@@ -232,9 +240,10 @@ input, .form-control {
   color: #e2e8f0;
   font-size: 0.85rem;
 }
+.custom-file-upload:hover { border-color: #3b82f6; }
 .custom-file-upload input[type="file"] { display: none; }
 
-/* Блоки секций */
+/* Блоки */
 .section-block {
   background: #181b20;
   border: 1px solid #282d37;
@@ -257,7 +266,7 @@ input, .form-control {
   border: 1px solid #282d37;
   border-radius: 6px;
   color: #fff;
-  padding: 6px;
+  padding: 8px;
   font-family: inherit;
   font-size: 0.85rem;
   resize: vertical;
