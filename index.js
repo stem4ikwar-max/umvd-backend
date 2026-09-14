@@ -1,28 +1,32 @@
 const express = require('express');
+const session = require('express-session');
 const path = require('path');
 const app = express();
 
 app.use(express.json());
+
+// Настройка сессий в Куки (сохранение входа)
+app.use(session({
+  secret: 'umvd_secret_key_2026',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 24 * 60 * 60 * 1000 } // Куки живут 24 часа
+}));
+
 app.use(express.static(__dirname));
 
 let users = [];
 let boardNodes = [
-  { id: '1', type: 'folder', title: 'Руководство УМВД', x: 100, y: 100 },
-  { id: '2', type: 'doc', title: 'Приказ №1', code: 'УМВД-001', author: 'Павел Аграбейко', role: 'Начальник УМВД', sections: [{ title: 'Без заголовка', text: 'Текст приказа...' }], x: 350, y: 100, parentId: '1' }
+  { id: '1', type: 'folder', title: 'Руководство УМВД', color: '#15181e', x: 100, y: 100 },
+  { id: '2', type: 'doc', title: 'Приказ №1', code: 'УМВД-001', author: 'Павел Аграбейко', role: 'Начальник УМВД', sections: [{ title: 'Без заголовка', text: 'Текст приказа...' }], color: '#15181e', x: 350, y: 100, parentId: '1' }
 ];
 
 let leaderTemplates = [
-  { id: 't1', title: 'Постановление о возбуждении', code: 'УМВД-П-01', role: 'Следователь', sections: [{ title: 'Установил', text: 'Текст...' }, { title: 'Решил', text: 'Текст...' }] },
-  { id: 't2', title: 'Приказ о назначении', code: 'УМВД-ПР-02', role: 'Начальник УМВД', sections: [{ title: 'Без заголовка', text: 'Назначить сотрудника...' }] }
+  { id: 't1', title: 'Постановление о возбуждении', code: 'УМВД-П-01', role: 'Следователь', sections: [{ title: 'Установил', text: 'Текст...' }, { title: 'Решил', text: 'Текст...' }] }
 ];
 
-let currentUser = null;
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// --- АВТОРИЗАЦИЯ ---
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.json({ success: false, error: 'Заполните все поля' });
@@ -43,7 +47,7 @@ app.post('/api/register', (req, res) => {
   };
 
   users.push(newUser);
-  currentUser = newUser;
+  req.session.user = newUser; // Сохраняем в куки
   res.json({ success: true, user: newUser });
 });
 
@@ -52,20 +56,23 @@ app.post('/api/login', (req, res) => {
   const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
   if (!user) return res.json({ success: false, error: 'Неверный логин или пароль' });
 
-  currentUser = user;
+  req.session.user = user; // Сохраняем в куки
   res.json({ success: true, user });
 });
 
 app.get('/api/me', (req, res) => {
-  res.json({ loggedIn: !!currentUser, user: currentUser });
+  if (req.session.user) {
+    res.json({ loggedIn: true, user: req.session.user });
+  } else {
+    res.json({ loggedIn: false });
+  }
 });
 
 app.post('/api/logout', (req, res) => {
-  currentUser = null;
+  req.session.destroy();
   res.json({ success: true });
 });
 
-// --- ДОСКА И БЛАНКИ ---
 app.get('/api/board', (req, res) => res.json(boardNodes));
 app.post('/api/board', (req, res) => {
   if (req.body.nodes) boardNodes = req.body.nodes;
@@ -73,27 +80,25 @@ app.post('/api/board', (req, res) => {
 });
 
 app.get('/api/leader/templates', (req, res) => res.json(leaderTemplates));
-
 app.post('/api/leader/templates', (req, res) => {
-  if (!currentUser || (!currentUser.is_leader && currentUser.role !== 'ADMIN')) {
-    return res.status(403).json({ error: 'Только Лидер или Админ может менять бланки!' });
-  }
-  if (req.body.templates) {
-    leaderTemplates = req.body.templates;
-  }
+  const u = req.session.user;
+  if (!u || (!u.is_leader && u.role !== 'ADMIN')) return res.status(403).json({ error: 'Нет доступа' });
+  if (req.body.templates) leaderTemplates = req.body.templates;
   res.json({ success: true });
 });
 
-// --- АДМИНКА ---
 app.get('/api/admin/users', (req, res) => {
-  if (!currentUser || currentUser.role !== 'ADMIN') return res.status(403).json({ error: 'Нет доступа' });
+  const u = req.session.user;
+  if (!u || u.role !== 'ADMIN') return res.status(403).json({ error: 'Нет доступа' });
   res.json(users);
 });
 
 app.post('/api/admin/update-user', (req, res) => {
-  if (!currentUser || currentUser.role !== 'ADMIN') return res.status(403).json({ error: 'Нет доступа' });
+  const u = req.session.user;
+  if (!u || u.role !== 'ADMIN') return res.status(403).json({ error: 'Только Админ!' });
+
   const { id, role, is_leader } = req.body;
-  const targetUser = users.find(u => u.id === Number(id));
+  const targetUser = users.find(usr => usr.id === Number(id));
 
   if (!targetUser) return res.json({ success: false, error: 'Пользователь не найден' });
   if (targetUser.is_main_admin && (role !== 'ADMIN' || !is_leader)) {
