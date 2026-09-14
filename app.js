@@ -1,13 +1,51 @@
 let currentUser = null, store = [], currentAuthMode = 'login';
 let scale = 0.8, panX = window.innerWidth / 5, panY = window.innerHeight / 5;
+let isPanning = false, startPanX = 0, startPanY = 0;
 let editingDocId = null, currentImages = [];
 let selectedNodeForCtx = null, linkingSourceNode = null, targetCreateType = 'folder';
 
 const colors = ['#1a1d24', '#1e3a8a', '#065f46', '#991b1b', '#854d0e', '#5b21b6', '#831843', '#134e4a', '#312e81', '#3f6212'];
 
+const viewport = document.getElementById('board-viewport');
 const board = document.getElementById('board-container');
 const svg = document.getElementById('connections-svg');
 const contextMenu = document.getElementById('context-menu');
+
+// Зум колесиком
+viewport.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+  const newScale = Math.min(Math.max(0.3, scale * zoomFactor), 2.5);
+  
+  const rect = viewport.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  panX = mouseX - (mouseX - panX) * (newScale / scale);
+  panY = mouseY - (mouseY - panY) * (newScale / scale);
+  scale = newScale;
+
+  updateTransform();
+}, { passive: false });
+
+// Панорамирование поля мышкой
+viewport.addEventListener('mousedown', (e) => {
+  if (e.target === viewport || e.target === board || e.target === svg) {
+    isPanning = true;
+    startPanX = e.clientX - panX;
+    startPanY = e.clientY - panY;
+  }
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (isPanning) {
+    panX = e.clientX - startPanX;
+    panY = e.clientY - startPanY;
+    updateTransform();
+  }
+});
+
+window.addEventListener('mouseup', () => { isPanning = false; });
 
 const palette = document.getElementById('color-palette');
 if (palette) {
@@ -60,7 +98,7 @@ function setupProfileUI() {
     document.getElementById('leader-img-upload').style.display = 'block';
   }
   if (currentUser.role === 'ADMIN') {
-    document.getElementById('btn-admin-modal').style.display = 'block';
+    document.getElementById('btn-top-admin').style.display = 'inline-block';
   }
 }
 
@@ -160,7 +198,7 @@ function uploadImageFromFile(e) {
   if (file) {
     const r = new FileReader();
     r.onload = (evt) => {
-      currentImages.push({ url: evt.target.result, x: 200, y: 150 });
+      currentImages.push({ id: Date.now().toString(), url: evt.target.result, x: 200, y: 150, width: 120 });
       renderDraggableImages();
     };
     r.readAsDataURL(file);
@@ -169,32 +207,72 @@ function uploadImageFromFile(e) {
 
 function renderDraggableImages() {
   const container = document.getElementById('images-container');
+  const controls = document.getElementById('image-controls-container');
   container.innerHTML = '';
-  currentImages.forEach((img) => {
+  controls.innerHTML = '';
+
+  currentImages.forEach((img, idx) => {
+    // Картинка на бланке
     const imageEl = document.createElement('img');
     imageEl.src = img.url;
     imageEl.className = 'draggable-img';
     imageEl.style.left = img.x + 'px';
     imageEl.style.top = img.y + 'px';
-    imageEl.style.width = '100px';
+    imageEl.style.width = (img.width || 120) + 'px';
 
     if (currentUser.is_leader || currentUser.role === 'ADMIN') {
+      let isDragging = false;
+      let startX, startY;
+
       imageEl.onmousedown = (e) => {
-        let shiftX = e.clientX - imageEl.getBoundingClientRect().left;
-        let shiftY = e.clientY - imageEl.getBoundingClientRect().top;
-        function moveAt(pageX, pageY) {
-          const rect = document.getElementById('paper-doc').getBoundingClientRect();
-          img.x = pageX - rect.left - shiftX;
-          img.y = pageY - rect.top - shiftY;
-          imageEl.style.left = img.x + 'px'; imageEl.style.top = img.y + 'px';
-        }
-        function onMouseMove(e) { moveAt(e.pageX, e.pageY); }
-        document.addEventListener('mousemove', onMouseMove);
-        document.onmouseup = () => { document.removeEventListener('mousemove', onMouseMove); document.onmouseup = null; };
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX - img.x;
+        startY = e.clientY - img.y;
+
+        const onMouseMove = (me) => {
+          if (!isDragging) return;
+          img.x = me.clientX - startX;
+          img.y = me.clientY - startY;
+          imageEl.style.left = img.x + 'px';
+          imageEl.style.top = img.y + 'px';
+        };
+
+        const onMouseUp = () => {
+          isDragging = false;
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
       };
     }
     container.appendChild(imageEl);
+
+    // Управление размером и удалением слева
+    const ctrl = document.createElement('div');
+    ctrl.style.cssText = 'background:#121418; border:1px solid #282d37; padding:8px; border-radius:8px; margin-bottom:8px; display:flex; align-items:center; gap:8px; font-size:0.75rem;';
+    ctrl.innerHTML = `
+      <span>Размер #${idx + 1}:</span>
+      <input type="range" min="40" max="300" value="${img.width || 120}" style="flex:1;" oninput="resizeImage('${img.id}', this.value)">
+      <button class="btn-outline" style="padding:2px 6px; color:#f87171;" onclick="removeImage('${img.id}')">❌</button>
+    `;
+    controls.appendChild(ctrl);
   });
+}
+
+function resizeImage(id, val) {
+  const img = currentImages.find(i => i.id === id);
+  if (img) {
+    img.width = val;
+    renderDraggableImages();
+  }
+}
+
+function removeImage(id) {
+  currentImages = currentImages.filter(i => i.id !== id);
+  renderDraggableImages();
 }
 
 function openEditor(id) {
