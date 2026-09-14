@@ -1,7 +1,18 @@
-// База пользователей (UID 1 - Главный Админ)
-let usersDB = [
-  { id: 1, username: 'Fanchik314G', password: '123', role: 'ADMIN', is_leader: true }
-];
+// Инициализация базы данных в localStorage
+const defaultAdmin = { id: 1, username: 'Fanchik314G', password: 'Fanchik314G"!', role: 'ADMIN', is_leader: true };
+
+function getUsers() {
+  const saved = localStorage.getItem('usersDB');
+  if (!saved) {
+    localStorage.setItem('usersDB', JSON.stringify([defaultAdmin]));
+    return [defaultAdmin];
+  }
+  return JSON.parse(saved);
+}
+
+function saveUsers(users) {
+  localStorage.setItem('usersDB', JSON.stringify(users));
+}
 
 let currentUser = null;
 let currentAuthMode = 'login';
@@ -18,7 +29,7 @@ let currentDocData = {
   ]
 };
 
-// Вкладки авторизации
+// Табы входа/регистрации
 function switchAuthTab(mode) {
   currentAuthMode = mode;
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -27,53 +38,72 @@ function switchAuthTab(mode) {
   document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Войти' : 'Зарегистрироваться';
 }
 
-// Вход / Регистрация
+// Авторизация и Валидация
 function submitAuth() {
   const username = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value.trim();
+  const users = getUsers();
 
-  if (!username || !password) return alert('Заполните все поля!');
+  if (!username || !password) {
+    return alert('Заполните все поля!');
+  }
 
   if (currentAuthMode === 'login') {
-    const user = usersDB.find(u => u.username === username && u.password === password);
-    if (!user) return alert('Неверный логин или пароль!');
+    const user = users.find(u => u.username === username && u.password === password);
+    if (!user) {
+      return alert('Ошибка: Аккаунт не найден или неверный пароль!');
+    }
     currentUser = user;
   } else {
-    if (usersDB.some(u => u.username === username)) return alert('Логин уже занят!');
+    // Валидация
+    if (/[а-яА-ЯёЁ]/.test(username)) {
+      return alert('Ошибка: Русские буквы в логине запрещены!');
+    }
+    if (username.length < 6) {
+      return alert('Ошибка: Длина логина должна быть от 6 символов!');
+    }
+    if (users.some(u => u.username === username)) {
+      return alert('Ошибка: Логин уже занят!');
+    }
+
     const newUser = {
-      id: usersDB.length + 1, // UID начинается с 2, 3 и т.д.
+      id: users.length + 1,
       username: username,
       password: password,
       role: 'USER',
       is_leader: false
     };
-    usersDB.push(newUser);
+    users.push(newUser);
+    saveUsers(users);
     currentUser = newUser;
   }
 
+  // Очистка полей и вход
+  document.getElementById('auth-username').value = '';
+  document.getElementById('auth-password').value = '';
   document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('board-viewport').style.display = 'block';
   updateProfileUI();
 }
 
-// Выход
+// Выход из системы
 function logout() {
   currentUser = null;
   document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('board-viewport').style.display = 'none';
   document.getElementById('profile-dropdown').style.display = 'none';
 }
 
-// Переключение профиля
 function toggleProfileMenu() {
   const dropdown = document.getElementById('profile-dropdown');
   dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
 }
 
-// Отрисовка профиля и прав
 function updateProfileUI() {
   if (!currentUser) return;
 
   document.getElementById('prof-name').innerText = currentUser.username;
-  document.getElementById('prof-role').innerText = currentUser.role === 'ADMIN' ? 'Администратор' : (currentUser.is_leader ? 'Лидер' : 'Пользователь');
+  document.getElementById('prof-role').innerText = currentUser.role === 'ADMIN' ? 'Главный Администратор' : (currentUser.is_leader ? 'Лидер' : 'Пользователь');
   document.getElementById('prof-uid').innerText = `UID: ${currentUser.id}`;
   document.getElementById('avatar-btn').innerText = currentUser.username.charAt(0).toUpperCase();
 
@@ -81,8 +111,6 @@ function updateProfileUI() {
   
   document.getElementById('leader-tools').style.display = isPowerUser ? 'flex' : 'none';
   document.getElementById('btn-top-admin').style.display = currentUser.role === 'ADMIN' ? 'block' : 'none';
-  document.getElementById('leader-img-upload').style.display = isPowerUser ? 'block' : 'none';
-  document.getElementById('btn-save-doc').style.display = isPowerUser ? 'block' : 'none';
 }
 
 // Модалки
@@ -94,8 +122,9 @@ function openAdminModal() {
   if (currentUser.role !== 'ADMIN') return;
   const list = document.getElementById('admin-users-list');
   list.innerHTML = '';
+  const users = getUsers();
 
-  usersDB.forEach(user => {
+  users.forEach(user => {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #282d37';
     tr.innerHTML = `
@@ -114,15 +143,20 @@ function openAdminModal() {
 }
 
 function toggleLeader(userId) {
-  const user = usersDB.find(u => u.id === userId);
+  const users = getUsers();
+  const user = users.find(u => u.id === userId);
   if (user) {
     user.is_leader = !user.is_leader;
+    saveUsers(users);
     openAdminModal();
-    if (currentUser.id === user.id) updateProfileUI();
+    if (currentUser.id === user.id) {
+      currentUser = user;
+      updateProfileUI();
+    }
   }
 }
 
-// Открытие редактора
+// Редактор
 function openEditor() {
   document.getElementById('editor-modal').style.display = 'flex';
   renderSectionBlocks();
@@ -136,7 +170,6 @@ function resetZoom() {
   alert('Зум сброшен');
 }
 
-// Логика блоков
 function renderSectionBlocks() {
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
@@ -171,7 +204,6 @@ function updateSectionText(index, val) {
   renderPaper();
 }
 
-// Отрисовка бланка
 function renderPaper() {
   document.getElementById('p-code').innerText = document.getElementById('inp-code').value || 'LSPD-MIS-SD-001';
   document.getElementById('p-author').innerText = document.getElementById('inp-author').value || 'Skeptic Drugonight';
