@@ -3,334 +3,702 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>УМВД — Единая система документооборота и управления</title>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Times+New+Roman&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <title>УМВД — Документооборот v4.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: #0f120f; color: #e2e8f0; min-height: 100vh; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: #0d0f0d; color: #e2e8f0; overflow: hidden; height: 100vh; width: 100vw; }
 
-    /* Авторизация */
-    .auth-card { max-width: 380px; margin: 100px auto; background: #171b17; border: 1px solid #283228; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-    .auth-card h2 { font-size: 1.3rem; margin-bottom: 20px; text-align: center; color: #fff; }
-    .auth-card input { width: 100%; padding: 12px; margin-bottom: 14px; background: #0f120f; border: 1px solid #283228; color: #fff; border-radius: 6px; outline: none; }
-    .auth-card input:focus { border-color: #86efac; }
+    /* Welcome Screen */
+    #welcome-screen {
+      position: fixed; inset: 0; background: radial-gradient(circle at center, #172017 0%, #090b09 100%); 
+      display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .welcome-card { 
+      background: rgba(23, 27, 23, 0.8); border: 1px solid #283228; padding: 40px; border-radius: 20px; 
+      text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); max-width: 460px; backdrop-filter: blur(10px); 
+    }
+    .welcome-card h1 { font-size: 1.6rem; margin-bottom: 8px; color: #fff; font-weight: 700; }
+    .welcome-card p { color: #8fa38f; font-size: 0.9rem; margin-bottom: 24px; }
+    
+    .btn-green { background: #4ade80; color: #062006; border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-green:hover { background: #86efac; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3); }
 
-    .btn { background: #86efac; color: #0e1f0e; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s; }
-    .btn:hover { background: #bbf7d0; }
-    .btn-sec { background: transparent; border: 1px solid #374151; color: #9ca3af; margin-top: 8px; }
-    .btn-sec:hover { background: #1f2937; color: #fff; }
+    /* Main Canvas */
+    #board-viewport { width: 100vw; height: 100vh; overflow: hidden; position: relative; background-color: #101410; cursor: grab; }
+    #board-viewport:active { cursor: grabbing; }
+    
+    #board-container { 
+      width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0;
+      background-image: radial-gradient(#242d24 1.5px, transparent 1.5px); background-size: 28px 28px; 
+    }
+    svg#connections-svg { position: absolute; inset: 0; width: 5000px; height: 5000px; pointer-events: none; z-index: 1; }
 
-    /* Навигация */
-    #app { display: none; flex-direction: column; height: 100vh; }
-    header { background: #171c17; border-bottom: 1px solid #283328; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-    .nav-tabs { display: flex; gap: 12px; }
-    .tab-btn { background: #232d23; border: 1px solid #283328; color: #9ca3af; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-    .tab-btn.active { background: #86efac; color: #0e1f0e; border-color: #86efac; }
+    /* Top Bar */
+    .top-bar { position: fixed; top: 16px; left: 16px; display: flex; gap: 10px; z-index: 100; align-items: center; background: rgba(18, 22, 18, 0.85); padding: 8px 12px; border-radius: 12px; border: 1px solid #283228; backdrop-filter: blur(8px); }
+    .btn-tool { background: #1a201a; border: 1px solid #2d382d; color: #d1d5db; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+    .btn-tool:hover { background: #252e25; color: #fff; border-color: #4ade80; }
+    .btn-tool.active { border-color: #4ade80; color: #4ade80; background: #1c2b1c; }
 
-    /* Основная область */
-    .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+    .leader-badge { padding: 6px 14px; border-radius: 20px; background: #1b261b; border: 1px solid #3e523e; color: #86efac; font-size: 0.8rem; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.2s; }
+    .leader-badge:hover { border-color: #86efac; }
 
-    /* Доска задач (Figma-style) */
-    .board-container { display: flex; gap: 20px; overflow-x: auto; height: 100%; padding-bottom: 10px; }
-    .board-column { background: #171c17; border: 1px solid #283328; border-radius: 8px; width: 320px; min-width: 320px; display: flex; flex-direction: column; padding: 14px; }
-    .column-header { font-weight: bold; font-size: 1rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; color: #86efac; }
-    .task-list { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 100px; }
-    .task-card { background: #232d23; border: 1px solid #283328; padding: 12px; border-radius: 6px; cursor: grab; }
-    .task-card h4 { font-size: 0.95rem; margin-bottom: 6px; color: #fff; }
-    .task-card p { font-size: 0.8rem; color: #9ca3af; }
+    /* Nodes */
+    .board-node { position: absolute; background: rgba(23, 28, 23, 0.95); border: 1px solid #283328; border-radius: 12px; padding: 14px 18px; min-width: 190px; cursor: grab; user-select: none; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: border-color 0.2s, box-shadow 0.2s; z-index: 2; backdrop-filter: blur(4px); }
+    .board-node:hover { border-color: #4ade80; box-shadow: 0 8px 25px rgba(74, 222, 128, 0.15); }
+    .board-node.selected-connect { border-color: #86efac; box-shadow: 0 0 16px rgba(134,239,172,0.5); }
+    .board-node.pinned { border-style: dashed; border-color: #f59e0b; }
+    .board-node.node-folder { border-left: 4px solid #3b82f6; }
+    .board-node.node-doc { border-left: 4px solid #4ade80; }
 
-    /* Конструктор документов */
-    .editor-container { display: flex; gap: 24px; max-width: 1300px; margin: 0 auto; }
-    .panel { flex: 1; background: #171c17; border: 1px solid #283328; padding: 20px; border-radius: 10px; }
-    .panel label { display: block; font-size: 0.8rem; color: #9ca3af; margin: 10px 0 4px; }
-    .panel input, .panel textarea { width: 100%; padding: 8px; background: #0f120f; border: 1px solid #283328; color: #fff; border-radius: 6px; }
+    .node-type { font-size: 0.68rem; color: #8fa38f; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .node-title { font-size: 0.92rem; font-weight: 600; color: #f3f4f6; }
 
-    .preview-box { flex: 1; display: flex; flex-direction: column; align-items: center; }
-    .paper-doc { width: 595px; min-height: 842px; background: #ffffff; color: #000000; padding: 50px; font-family: 'Times New Roman', serif; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .doc-header { text-align: center; line-height: 1.2; margin-bottom: 25px; }
-    .doc-header h3 { font-size: 13pt; text-transform: uppercase; font-weight: bold; }
-    .doc-header p { font-size: 9.5pt; }
-    .doc-recipient { margin-left: auto; width: 50%; font-size: 11pt; margin-bottom: 30px; }
-    .doc-meta { display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 25px; font-size: 10pt; }
-    .doc-body { font-size: 11pt; line-height: 1.4; text-indent: 25px; text-align: justify; min-height: 250px; }
-    .doc-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; font-size: 11pt; }
-    .sign-container { position: relative; text-align: right; min-width: 160px; }
-    .handwriting { font-family: 'Caveat', cursive; font-size: 28pt; position: absolute; top: -30px; left: 0; color: #0f2b5c; transform: rotate(-6deg); }
+    /* Context Menu */
+    #ctx-menu { position: fixed; background: #171c17; border: 1px solid #2b362b; border-radius: 10px; padding: 6px 0; width: 180px; display: none; z-index: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
+    .ctx-item { padding: 8px 14px; font-size: 0.85rem; color: #d1d5db; cursor: pointer; transition: background 0.15s; }
+    .ctx-item:hover { background: #253325; color: #86efac; }
+    .ctx-item.danger:hover { background: #3f1d1d; color: #f87171; }
 
-    /* Админка */
-    .admin-container { max-width: 900px; margin: 0 auto; background: #171c17; border: 1px solid #283328; padding: 24px; border-radius: 10px; }
+    /* Modals */
+    .custom-modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 3000; }
+    .custom-modal { background: #171c17; border: 1px solid #2b362b; border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8); }
+    .custom-modal h3 { font-size: 1.1rem; margin-bottom: 12px; color: #fff; }
+    .custom-modal label { display: block; font-size: 0.85rem; color: #9ca3af; margin-bottom: 8px; }
+    .custom-modal input { width: 100%; background: #111411; border: 1px solid #2b362b; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 0.95rem; outline: none; margin-bottom: 20px; }
+    .custom-modal input:focus { border-color: #4ade80; }
+    .custom-modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
+    .btn-modal-ok { background: #4ade80; color: #0e1f0e; border: none; padding: 8px 22px; border-radius: 16px; font-weight: 600; cursor: pointer; }
+    .btn-modal-cancel { background: transparent; border: 1px solid #374151; color: #d1d5db; padding: 8px 18px; border-radius: 16px; cursor: pointer; }
+
+    /* Editor Modal */
+    #editor-modal { position: fixed; inset: 0; background: #0d0f0d; display: none; z-index: 2000; flex-direction: column; }
+    .editor-header { height: 56px; background: #141814; border-bottom: 1px solid #242d24; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-size: 0.85rem; color: #9ca3af; }
+    .editor-header-left { display: flex; align-items: center; gap: 15px; }
+    .btn-back { background: #1f271f; border: 1px solid #374737; color: #86efac; padding: 6px 16px; border-radius: 14px; font-weight: 600; cursor: pointer; }
+    .btn-back:hover { background: #283628; }
+    .btn-download { background: #2563eb; color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-weight: 600; cursor: pointer; margin-right: 10px; transition: background 0.2s; }
+    .btn-download:hover { background: #1d4ed8; }
+
+    .editor-body { flex: 1; display: flex; overflow: hidden; }
+    .editor-left { flex: 1; padding: 24px; overflow-y: auto; background: #111411; border-right: 1px solid #242d24; }
+    .leader-panel { background: #182218; border: 1px dashed #4ade80; padding: 16px; border-radius: 10px; margin-bottom: 20px; }
+    .leader-panel h4 { font-size: 0.85rem; color: #86efac; margin-bottom: 10px; text-transform: uppercase; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.75rem; color: #9ca3af; margin-bottom: 6px; }
+    .form-control, select.form-control { width: 100%; background: #181f18; border: 1px solid #2b362b; border-radius: 8px; padding: 10px; color: #fff; font-size: 0.9rem; outline: none; }
+    .form-control:focus { border-color: #4ade80; }
+    textarea.form-control { resize: vertical; min-height: 70px; }
+
+    .img-item-control { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: #181f18; padding: 8px; border-radius: 6px; border: 1px solid #2b362b; }
+    .img-item-control input[type="text"] { flex: 1; }
+    .img-item-control input[type="number"] { width: 70px; }
+
+    .editor-right { flex: 1; background: #161b16; padding: 30px; display: flex; justify-content: center; overflow-y: auto; }
+    .paper-doc { width: 100%; max-width: 595px; background: #ffffff; color: #000; padding: 45px; border-radius: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: space-between; min-height: 842px; transition: all 0.2s; }
+    
+    .doc-images-container { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin: 15px 0; }
+    .doc-img-item { object-fit: contain; }
+
+    .doc-header-text { text-align: center; font-size: 11pt; font-weight: bold; text-transform: uppercase; line-height: 1.3; margin-bottom: 20px; }
+    .doc-body-text { font-size: 11pt; line-height: 1.5; text-align: justify; }
+    .doc-body-text h4 { font-size: 12pt; margin: 15px 0 15px 0; text-align: center; text-transform: uppercase; font-weight: bold; }
+
+    .doc-footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10pt; }
   </style>
 </head>
 <body>
 
-  <!-- Окно авторизации -->
-  <div id="auth-screen" class="auth-card">
-    <h2 id="auth-title">Вход в систему УМВД</h2>
-    <input type="text" id="auth-user" placeholder="Логин">
-    <input type="password" id="auth-pass" placeholder="Пароль">
-    <button class="btn" onclick="handleAuth()">Войти</button>
-    <button class="btn btn-sec" onclick="toggleAuthMode()">Регистрация</button>
+  <!-- Приветственный экран -->
+  <div id="welcome-screen">
+    <div class="welcome-card">
+      <h1>УМВД по Ленинградской области</h1>
+      <p>Система электронного документооборота v4.0</p>
+      <button class="btn-green" onclick="enterSystem()">Зайти в документооборот</button>
+    </div>
   </div>
 
-  <!-- Главный интерфейс приложения -->
-  <div id="app">
-    <header>
-      <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('board')">📋 Доска задач</button>
-        <button class="tab-btn" onclick="switchTab('editor')">📄 Редактор бланков</button>
-        <button class="tab-btn" id="admin-tab-btn" style="display:none;" onclick="switchTab('admin')">👑 Админ-панель</button>
+  <!-- Главная Доска с зумом и панорамированием -->
+  <div id="board-viewport">
+    <div class="top-bar">
+      <button class="btn-tool" onclick="openInputModal('Создать тему/отдел', 'Название:', (val) => createNode('folder', val))">+ Тема</button>
+      <button class="btn-tool" onclick="openInputModal('Создать бумагу', 'Название документа:', (val) => createNode('doc', val))">+ Бумага</button>
+      <button class="btn-tool" id="btn-connect-mode" onclick="toggleConnectMode()">🔗 Соединить</button>
+      <button class="btn-tool" onclick="resetZoom()">🎯 Сброс зума</button>
+      <div class="leader-badge" id="leader-toggle" onclick="toggleLeaderMode()">👑 Режим Лидера: ВЫКЛ</div>
+    </div>
+    
+    <div id="board-container">
+      <svg id="connections-svg"></svg>
+    </div>
+  </div>
+
+  <!-- Контекстное меню -->
+  <div id="ctx-menu">
+    <div class="ctx-item" onclick="ctxRename()">Переименовать</div>
+    <div class="ctx-item" onclick="ctxStartConnect()">Присоединить к...</div>
+    <div class="ctx-item" onclick="ctxRemoveParent()">Отсоединить</div>
+    <div class="ctx-item" onclick="ctxTogglePin()">Закрепить / Разблокировать</div>
+    <div class="ctx-item danger" onclick="ctxDelete()">Удалить</div>
+  </div>
+
+  <!-- Модальное окно ввода -->
+  <div class="custom-modal-overlay" id="input-modal">
+    <div class="custom-modal">
+      <h3 id="modal-title">Подтвердите действие</h3>
+      <label id="modal-label">Введите значение:</label>
+      <input type="text" id="modal-input" autocomplete="off">
+      <div class="custom-modal-btns">
+        <button class="btn-modal-ok" onclick="submitInputModal()">ОК</button>
+        <button class="btn-modal-cancel" onclick="closeInputModal()">Отмена</button>
       </div>
-      <div id="user-bar" style="font-size: 0.85rem; color: #86efac;"></div>
-    </header>
+    </div>
+  </div>
 
-    <div class="main-content">
-      <!-- Вкладка: Интерактивная доска -->
-      <div id="tab-board">
-        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
-          <input type="text" id="new-task-title" placeholder="Название задачи / делопроизводства..." style="padding: 8px; background: #171c17; border: 1px solid #283328; color: #fff; border-radius: 6px; width: 300px;">
-          <button class="btn" style="width: auto;" onclick="addTask()">+ Добавить дело</button>
-        </div>
-        <div class="board-container">
-          <div class="board-column">
-            <div class="column-header">В работе</div>
-            <div class="task-list" id="col-progress"></div>
-          </div>
-          <div class="board-column">
-            <div class="column-header">На подписи</div>
-            <div class="task-list" id="col-review"></div>
-          </div>
-          <div class="board-column">
-            <div class="column-header">Завершено</div>
-            <div class="task-list" id="col-done"></div>
-          </div>
-        </div>
+  <!-- Редактор документа -->
+  <div id="editor-modal">
+    <div class="editor-header">
+      <div class="editor-header-left">
+        <button class="btn-back" onclick="closeEditor()">← На главную</button>
+        <span id="ed-breadcrumb">УМВД > Документ</span>
       </div>
-
-      <!-- Вкладка: Редактор документов -->
-      <div id="tab-editor" style="display: none;">
-        <div class="editor-container">
-          <div class="panel">
-            <label>Кому (ФИО адресата):</label>
-            <input type="text" id="in-to" value="Е.В. Могилеву" oninput="renderDoc()">
-            
-            <label>Адрес адресата:</label>
-            <input type="text" id="in-addr" value="ул. Липецкая, д. 7, г. Волгоград, 400120" oninput="renderDoc()">
-
-            <label>Текст документа:</label>
-            <textarea id="in-body" rows="6" oninput="renderDoc()">Ваше обращение в адрес Министерства внутренних дел Российской Федерации рассмотрено.</textarea>
-
-            <label>Должность подписывающего:</label>
-            <input type="text" id="in-role" value="Заместитель начальника" oninput="renderDoc()">
-
-            <label>Инициалы и Фамилия (например: А.Н. Хабаров):</label>
-            <input type="text" id="in-name" value="А.Н. Хабаров" oninput="renderDoc()">
-
-            <button class="btn" style="margin-top: 15px;" onclick="downloadPNG()">📸 Скачать PNG</button>
+      <div>
+        <button class="btn-download" onclick="downloadPDF()">📥 Скачать PDF</button>
+        <button class="btn-green" onclick="closeEditor()">Сохранить и закрыть</button>
+      </div>
+    </div>
+    <div class="editor-body">
+      <!-- Настройки слева -->
+      <div class="editor-left">
+        <div class="leader-panel" id="leader-controls" style="display: none;">
+          <h4>👑 Настройка бланка (Режим Лидера)</h4>
+          <div class="form-group">
+            <label>Шрифт бланка</label>
+            <select id="cfg-font" class="form-control" onchange="updatePaper()">
+              <option value="'Times New Roman', serif">Times New Roman (Классика)</option>
+              <option value="'Inter', sans-serif">Inter (Современный)</option>
+              <option value="'Montserrat', sans-serif">Montserrat (Строгий)</option>
+              <option value="'Roboto', sans-serif">Roboto</option>
+            </select>
           </div>
-
-          <div class="preview-box">
-            <div class="paper-doc" id="paper-doc">
-              <div class="doc-header">
-                <h3>Министерство Внутренних Дел<br>Российской Федерации</h3>
-                <p><b>(МВД России)</b></p>
-                <p style="margin-top: 6px;"><b>Департамент кадрового обеспечения</b></p>
-                <p style="font-size: 8pt; color: #444;">Газетный пер., 6, Москва, 125009</p>
-              </div>
-
-              <div class="doc-recipient">
-                <p id="out-to">Е.В. Могилеву</p>
-                <p id="out-addr">ул. Липецкая, д. 7</p>
-              </div>
-
-              <div class="doc-meta">
-                <span>на № ________ от ________</span>
-                <span>№ 21/М-2764</span>
-              </div>
-
-              <div class="doc-body" id="out-body"></div>
-
-              <div class="doc-footer">
-                <div id="out-role">Заместитель начальника</div>
-                <div class="sign-container">
-                  <span class="handwriting" id="out-sign">Хабаров</span>
-                  <span id="out-name">А.Н. Хабаров</span>
-                </div>
-              </div>
+          <div class="form-group">
+            <label>Изображения (Гербы / Печати / Скриншоты)</label>
+            <div id="images-list"></div>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+              <button class="btn-tool" style="flex:1; justify-content:center;" onclick="addImageControl()">+ Ссылка (URL)</button>
+              <label class="btn-tool" style="flex:1; justify-content:center; cursor:pointer;">
+                📁 С ПК <input type="file" accept="image/*" style="display:none;" onchange="uploadImageFromFile(event)">
+              </label>
             </div>
           </div>
+          <div class="form-group">
+            <label>Цвет фона листа</label>
+            <input type="color" id="cfg-bg" value="#ffffff" class="form-control" style="height:40px; padding:2px;" oninput="updatePaper()">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Заголовок / Название документа</label>
+          <input type="text" id="inp-title" class="form-control" oninput="updatePaper()">
+        </div>
+        <div class="form-group">
+          <label>Код / Номер документа</label>
+          <input type="text" id="inp-code" class="form-control" oninput="updatePaper()">
+        </div>
+        <div class="form-group">
+          <label>Вступительная часть (Преамбула)</label>
+          <textarea id="inp-intro" class="form-control" oninput="updatePaper()"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Постановительная часть / Основной текст</label>
+          <textarea id="inp-main" class="form-control" style="min-height: 140px;" oninput="updatePaper()"></textarea>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <div class="form-group" style="flex: 1;">
+            <label>Автор (ФИО)</label>
+            <input type="text" id="inp-author" class="form-control" oninput="updatePaper()">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>Должность</label>
+            <input type="text" id="inp-role" class="form-control" oninput="updatePaper()">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>Дата</label>
+            <input type="text" id="inp-date" class="form-control" oninput="updatePaper()">
+          </div>
         </div>
       </div>
 
-      <!-- Вкладка: Админ-панель -->
-      <div id="tab-admin" style="display: none;">
-        <div class="admin-container">
-          <h3 style="margin-bottom: 15px;">Управление системой и лидерами</h3>
-          <p style="color: #9ca3af; font-size: 0.9rem; margin-bottom: 20px;">Здесь администратор может изменять права сотрудников, распределять доступ по отделам и управлять ролями.</p>
-          <button class="btn" style="width: auto;" onclick="toggleLeaderMode()">Переключить статус лидера</button>
+      <!-- Предпросмотр листа -->
+      <div class="editor-right">
+        <div class="paper-doc" id="paper-doc">
+          <div>
+            <div class="doc-header-text">
+              Управление Министерства Внутренних Дел<br>
+              по Ленинградской области<br>
+              <small id="p-code" style="font-weight: normal; font-size: 9pt;">УМВД-RES-001</small>
+            </div>
+            
+            <div class="doc-images-container" id="p-images-box"></div>
+
+            <hr style="margin-bottom: 20px; border: 0; border-top: 1px solid #000;">
+            
+            <div class="doc-body-text">
+              <h4 id="p-title-head">ПОСТАНОВЛЕНИЕ</h4>
+              <p id="p-intro" style="margin-bottom: 15px;"></p>
+              <p id="p-main" style="white-space: pre-line;"></p>
+            </div>
+          </div>
+
+          <div class="doc-footer">
+            <div>
+              <strong id="p-role">Начальник УМВД</strong><br>
+              <span id="p-author">Иван Иванов</span>
+            </div>
+            <div>
+              <span id="p-date">14.09.2026</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    const API_URL = 'https://mvdoborotdm.onrender.com';
-    
-    let isRegMode = false;
-    let token = localStorage.getItem('token');
-    let userRole = localStorage.getItem('role');
-    let username = localStorage.getItem('username');
-    let uid = localStorage.getItem('uid');
+    const defaultData = [
+      { id: '1', type: 'folder', title: 'Руководство УМВД', x: 400, y: 150, pinned: false, parentId: null },
+      { id: '2', type: 'folder', title: 'Следственный Отдел', x: 200, y: 320, pinned: false, parentId: '1' },
+      { id: '3', type: 'doc', title: 'Постановление №1', x: 200, y: 500, pinned: false, parentId: '2', 
+        code: 'УМВД-SO-001', 
+        intro: 'Я, Следователь УМВД по Ленинградской области, рассмотрев материалы уголовного дела...', 
+        main: '1. Возбудить уголовное дело №102.\n2. Принять дело к своему производству.', 
+        author: 'Павел Смирнов', role: 'Следователь', date: '14.09.2026',
+        font: "'Times New Roman', serif", images: [], bgColor: '#ffffff'
+      }
+    ];
 
-    let tasks = JSON.parse(localStorage.getItem('mvd_tasks') || '[]');
+    let store = JSON.parse(localStorage.getItem('umvd_board_v4')) || defaultData;
+    let selectedNodeId = null;
+    let connectSourceId = null;
+    let connectMode = false;
+    let isLeaderMode = false;
 
-    function toggleAuthMode() {
-      isRegMode = !isRegMode;
-      document.getElementById('auth-title').innerText = isRegMode ? 'Регистрация' : 'Вход в систему УМВД';
+    // Панорамирование и зум
+    let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+
+    let activeDragNode = null;
+    let dragOffset = { x: 0, y: 0 };
+    let currentImages = [];
+
+    const viewport = document.getElementById('board-viewport');
+    const board = document.getElementById('board-container');
+    const svg = document.getElementById('connections-svg');
+    const ctxMenu = document.getElementById('ctx-menu');
+
+    function saveState() {
+      localStorage.setItem('umvd_board_v4', JSON.stringify(store));
     }
 
-    async function handleAuth() {
-      const u = document.getElementById('auth-user').value;
-      const p = document.getElementById('auth-pass').value;
-      const route = isRegMode ? '/api/register' : '/api/login';
-
-      try {
-        const res = await fetch(`${API_URL}${route}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u, password: p })
-        });
-        const data = await res.json();
-
-        if (data.error) return alert(data.error);
-
-        if (isRegMode) {
-          alert(`Успешная регистрация! Ваш UID: ${data.uid}. Теперь войдите.`);
-          toggleAuthMode();
-        } else {
-          token = data.token;
-          userRole = data.role;
-          username = data.username;
-          uid = data.uid;
-
-          localStorage.setItem('token', token);
-          localStorage.setItem('role', userRole);
-          localStorage.setItem('username', username);
-          localStorage.setItem('uid', uid);
-
-          showMainApp();
-        }
-      } catch {
-        alert('Ошибка связи с сервером');
-      }
-    }
-
-    function showMainApp() {
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-      document.getElementById('user-bar').innerText = `Сотрудник: ${username} | UID: ${uid} | Роль: ${userRole}`;
-
-      if (userRole === 'admin') {
-        document.getElementById('admin-tab-btn').style.display = 'inline-block';
-      }
+    function enterSystem() {
+      document.getElementById('welcome-screen').style.display = 'none';
       renderBoard();
-      renderDoc();
+      updateTransform();
     }
 
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('tab-board').style.display = 'none';
-      document.getElementById('tab-editor').style.display = 'none';
-      document.getElementById('tab-admin').style.display = 'none';
+    // Управление трансформом доски (Zoom & Pan)
+    function updateTransform() {
+      board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
 
-      if (tab === 'board') {
-        document.getElementById('tab-board').style.display = 'block';
-        event.target.classList.add('active');
-      } else if (tab === 'editor') {
-        document.getElementById('tab-editor').style.display = 'block';
-        event.target.classList.add('active');
-      } else if (tab === 'admin') {
-        document.getElementById('tab-admin').style.display = 'block';
-        event.target.classList.add('active');
+    function resetZoom() {
+      scale = 1; panX = 0; panY = 0;
+      updateTransform();
+    }
+
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = 1.1;
+      if (e.deltaY < 0) {
+        scale = Math.min(scale * zoomFactor, 2.5);
+      } else {
+        scale = Math.max(scale / zoomFactor, 0.4);
       }
-    }
+      updateTransform();
+    }, { passive: false });
 
-    /* Логика Доски задач */
-    function renderBoard() {
-      const colProgress = document.getElementById('col-progress');
-      const colReview = document.getElementById('col-review');
-      const colDone = document.getElementById('col-done');
-
-      colProgress.innerHTML = '';
-      colReview.innerHTML = '';
-      colDone.innerHTML = '';
-
-      tasks.forEach((task, index) => {
-        const el = document.createElement('div');
-        el.className = 'task-card';
-        el.innerHTML = `<h4>${task.title}</h4><p>Создал: ${task.author}</p>`;
-        
-        if (task.status === 'progress') colProgress.appendChild(el);
-        else if (task.status === 'review') colReview.appendChild(el);
-        else if (task.status === 'done') colDone.appendChild(el);
-      });
-    }
-
-    function addTask() {
-      const val = document.getElementById('new-task-title').value;
-      if (!val) return;
-      tasks.push({ title: val, author: username, status: 'progress' });
-      localStorage.setItem('mvd_tasks', JSON.stringify(tasks));
-      document.getElementById('new-task-title').value = '';
-      renderBoard();
-    }
-
-    /* Логика Генерации бланков */
-    function renderDoc() {
-      document.getElementById('out-to').innerText = document.getElementById('in-to').value;
-      document.getElementById('out-addr').innerText = document.getElementById('in-addr').value;
-      document.getElementById('out-body').innerText = document.getElementById('in-body').value;
-      document.getElementById('out-role').innerText = document.getElementById('in-role').value;
-      
-      const nameVal = document.getElementById('in-name').value;
-      document.getElementById('out-name').innerText = nameVal;
-
-      const parts = nameVal.trim().split(' ');
-      const surname = parts[parts.length - 1] || nameVal;
-      document.getElementById('out-sign').innerText = surname;
-    }
-
-    function downloadPNG() {
-      const paper = document.getElementById('paper-doc');
-      html2canvas(paper, { scale: 2 }).then(canvas => {
-        const a = document.createElement('a');
-        a.download = `Документ_МВД_${Date.now()}.png`;
-        a.href = canvas.toDataURL('image/png');
-        a.click();
-      });
-    }
-
-    async function toggleLeaderMode() {
-      const res = await fetch(`${API_URL}/api/admin/toggle-leader`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+    viewport.addEventListener('mousedown', (e) => {
+      if (e.button === 1 || e.button === 2) { // Колесико или ПКМ по полю
+        if (e.target === viewport || e.target === board || e.target === svg) {
+          isPanning = true;
+          panStart.x = e.clientX - panX;
+          panStart.y = e.clientY - panY;
         }
-      });
-      const data = await res.json();
-      alert(data.message || data.error);
-    }
-
-    /* Блокировка DevTools и Контекстного меню */
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
-        e.preventDefault();
       }
     });
 
-    if (token) showMainApp();
+    window.addEventListener('mousemove', (e) => {
+      if (isPanning) {
+        panX = e.clientX - panStart.x;
+        panY = e.clientY - panStart.y;
+        updateTransform();
+      }
+    });
+
+    window.addEventListener('mouseup', () => isPanning = false);
+
+    function toggleLeaderMode() {
+      isLeaderMode = !isLeaderMode;
+      const btn = document.getElementById('leader-toggle');
+      btn.innerText = `👑 Режим Лидера: ${isLeaderMode ? 'ВКЛ' : 'ВЫКЛ'}`;
+      btn.style.borderColor = isLeaderMode ? '#86efac' : '#3e523e';
+      document.getElementById('leader-controls').style.display = isLeaderMode ? 'block' : 'none';
+    }
+
+    function renderBoard() {
+      document.querySelectorAll('.board-node').forEach(el => el.remove());
+
+      store.forEach(node => {
+        const div = document.createElement('div');
+        const isDoc = node.type === 'doc';
+        div.className = `board-node ${isDoc ? 'node-doc' : 'node-folder'} ${node.pinned ? 'pinned' : ''}`;
+        if (connectSourceId === node.id) div.classList.add('selected-connect');
+
+        div.style.left = node.x + 'px';
+        div.style.top = node.y + 'px';
+        div.dataset.id = node.id;
+
+        div.innerHTML = `
+          <div class="node-type">${isDoc ? '📄 Документ' : '📁 Тема / Отдел'}</div>
+          <div class="node-title">${node.title}</div>
+        `;
+
+        div.addEventListener('mousedown', (e) => {
+          if (e.button === 0) startDrag(e, node);
+        });
+
+        div.addEventListener('click', (e) => {
+          if (connectMode || connectSourceId) {
+            e.stopPropagation();
+            handleConnectClick(node.id);
+            return;
+          }
+          if (isDoc && !e.defaultPrevented) openEditor(node.id);
+        });
+
+        div.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          selectedNodeId = node.id;
+          showCtxMenu(e.clientX, e.clientY);
+        });
+
+        board.appendChild(div);
+      });
+
+      drawLines();
+    }
+
+    function drawLines() {
+      svg.innerHTML = '';
+      store.forEach(node => {
+        if (node.parentId) {
+          const parent = store.find(n => n.id === node.parentId);
+          if (parent) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const x1 = parent.x + 95;
+            const y1 = parent.y + 35;
+            const x2 = node.x + 95;
+            const y2 = node.y + 35;
+
+            const dx = Math.abs(x2 - x1) / 2;
+            const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+            path.setAttribute('d', d);
+            path.setAttribute('stroke', '#4ade80');
+            path.setAttribute('stroke-width', '2.5');
+            path.setAttribute('stroke-dasharray', '5 5');
+            path.setAttribute('fill', 'none');
+            svg.appendChild(path);
+          }
+        }
+      });
+    }
+
+    function toggleConnectMode() {
+      connectMode = !connectMode;
+      connectSourceId = null;
+      document.getElementById('btn-connect-mode').classList.toggle('active', connectMode);
+      renderBoard();
+    }
+
+    function handleConnectClick(targetId) {
+      if (!connectSourceId) {
+        connectSourceId = targetId;
+        renderBoard();
+      } else {
+        if (connectSourceId !== targetId) {
+          const target = store.find(n => n.id === targetId);
+          if (target) {
+            target.parentId = connectSourceId;
+            saveState();
+          }
+        }
+        connectSourceId = null;
+        connectMode = false;
+        document.getElementById('btn-connect-mode').classList.remove('active');
+        renderBoard();
+      }
+    }
+
+    function startDrag(e, node) {
+      if (node.pinned || connectMode) return;
+      activeDragNode = node;
+      dragOffset.x = (e.clientX / scale) - node.x;
+      dragOffset.y = (e.clientY / scale) - node.y;
+
+      document.addEventListener('mousemove', onDrag);
+      document.addEventListener('mouseup', stopDrag);
+    }
+
+    function onDrag(e) {
+      if (!activeDragNode) return;
+      activeDragNode.x = (e.clientX / scale) - dragOffset.x;
+      activeDragNode.y = (e.clientY / scale) - dragOffset.y;
+      
+      const el = document.querySelector(`[data-id="${activeDragNode.id}"]`);
+      if (el) {
+        el.style.left = activeDragNode.x + 'px';
+        el.style.top = activeDragNode.y + 'px';
+      }
+      drawLines();
+    }
+
+    function stopDrag() {
+      if (!activeDragNode) return;
+      activeDragNode = null;
+      document.removeEventListener('mousemove', onDrag);
+      document.removeEventListener('mouseup', stopDrag);
+      saveState();
+    }
+
+    // Modal Helpers
+    let modalCallback = null;
+    function openInputModal(title, label, callback) {
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-label').innerText = label;
+      document.getElementById('modal-input').value = '';
+      document.getElementById('input-modal').style.display = 'flex';
+      document.getElementById('modal-input').focus();
+      modalCallback = callback;
+    }
+
+    function closeInputModal() {
+      document.getElementById('input-modal').style.display = 'none';
+      modalCallback = null;
+    }
+
+    function submitInputModal() {
+      const val = document.getElementById('modal-input').value.trim();
+      if (val && modalCallback) modalCallback(val);
+      closeInputModal();
+    }
+
+    function createNode(type, title) {
+      const id = Date.now().toString();
+      store.push({
+        id: id,
+        type: type,
+        title: title,
+        x: (-panX + 300) / scale + Math.random() * 50,
+        y: (-panY + 200) / scale + Math.random() * 50,
+        pinned: false,
+        parentId: null,
+        code: 'УМВД-00' + (store.length + 1),
+        intro: '', main: '', author: '', role: '', date: new Date().toLocaleDateString(),
+        font: "'Times New Roman', serif", images: [], bgColor: '#ffffff'
+      });
+      saveState();
+      renderBoard();
+    }
+
+    function showCtxMenu(x, y) {
+      ctxMenu.style.display = 'block';
+      ctxMenu.style.left = x + 'px';
+      ctxMenu.style.top = y + 'px';
+    }
+
+    window.addEventListener('click', () => ctxMenu.style.display = 'none');
+
+    function ctxRename() {
+      const node = store.find(n => n.id === selectedNodeId);
+      if (node) {
+        openInputModal('Переименование', 'Новое название:', (val) => {
+          node.title = val;
+          saveState();
+          renderBoard();
+        });
+      }
+    }
+
+    function ctxStartConnect() {
+      connectSourceId = selectedNodeId;
+      connectMode = true;
+      document.getElementById('btn-connect-mode').classList.add('active');
+      renderBoard();
+    }
+
+    function ctxRemoveParent() {
+      const node = store.find(n => n.id === selectedNodeId);
+      if (node) {
+        node.parentId = null;
+        saveState();
+        renderBoard();
+      }
+    }
+
+    function ctxTogglePin() {
+      const node = store.find(n => n.id === selectedNodeId);
+      if (node) {
+        node.pinned = !node.pinned;
+        saveState();
+        renderBoard();
+      }
+    }
+
+    function ctxDelete() {
+      store = store.filter(n => n.id !== selectedNodeId && n.parentId !== selectedNodeId);
+      saveState();
+      renderBoard();
+    }
+
+    // Редактор Документа
+    let editingDocId = null;
+
+    function openEditor(id) {
+      const doc = store.find(n => n.id === id);
+      if (!doc) return;
+
+      editingDocId = id;
+      currentImages = doc.images ? [...doc.images] : [];
+
+      document.getElementById('ed-breadcrumb').innerText = `УМВД > ${doc.title}`;
+      document.getElementById('inp-title').value = doc.title || '';
+      document.getElementById('inp-code').value = doc.code || '';
+      document.getElementById('inp-intro').value = doc.intro || '';
+      document.getElementById('inp-main').value = doc.main || '';
+      document.getElementById('inp-author').value = doc.author || '';
+      document.getElementById('inp-role').value = doc.role || '';
+      document.getElementById('inp-date').value = doc.date || '';
+
+      document.getElementById('cfg-font').value = doc.font || "'Times New Roman', serif";
+      document.getElementById('cfg-bg').value = doc.bgColor || '#ffffff';
+
+      renderImageControls();
+      updatePaper();
+      document.getElementById('editor-modal').style.display = 'flex';
+    }
+
+    function addImageControl(url = '', width = 90) {
+      currentImages.push({ url, width });
+      renderImageControls();
+      updatePaper();
+    }
+
+    function uploadImageFromFile(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          addImageControl(evt.target.result, 100);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function renderImageControls() {
+      const container = document.getElementById('images-list');
+      container.innerHTML = '';
+      currentImages.forEach((img, idx) => {
+        const div = document.createElement('div');
+        div.className = 'img-item-control';
+        div.innerHTML = `
+          <input type="text" class="form-control" placeholder="URL фото / base64" value="${img.url.startsWith('data:') ? '[Загруженный файл]' : img.url}" ${img.url.startsWith('data:') ? 'disabled' : ''} oninput="currentImages[${idx}].url=this.value; updatePaper();">
+          <input type="number" class="form-control" placeholder="px" value="${img.width}" oninput="currentImages[${idx}].width=this.value; updatePaper();">
+          <button style="background:none; border:none; color:#f87171; cursor:pointer; font-weight:bold;" onclick="currentImages.splice(${idx},1); renderImageControls(); updatePaper();">✕</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function updatePaper() {
+      const paper = document.getElementById('paper-doc');
+      paper.style.fontFamily = document.getElementById('cfg-font').value;
+      paper.style.backgroundColor = document.getElementById('cfg-bg').value;
+
+      document.getElementById('p-title-head').innerText = (document.getElementById('inp-title').value || 'ДОКУМЕНТ').toUpperCase();
+      document.getElementById('p-code').innerText = document.getElementById('inp-code').value || 'УМВД-000';
+      document.getElementById('p-intro').innerText = document.getElementById('inp-intro').value;
+      document.getElementById('p-main').innerText = document.getElementById('inp-main').value;
+      document.getElementById('p-author').innerText = document.getElementById('inp-author').value || 'ФИО';
+      document.getElementById('p-role').innerText = document.getElementById('inp-role').value || 'Должность';
+      document.getElementById('p-date').innerText = document.getElementById('inp-date').value || '';
+
+      const imgBox = document.getElementById('p-images-box');
+      imgBox.innerHTML = '';
+      currentImages.forEach(img => {
+        if (img.url) {
+          const imageEl = document.createElement('img');
+          imageEl.src = img.url;
+          imageEl.className = 'doc-img-item';
+          imageEl.style.width = (img.width || 90) + 'px';
+          imgBox.appendChild(imageEl);
+        }
+      });
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('paper-doc');
+      const filename = (document.getElementById('inp-title').value || 'Документ') + '.pdf';
+      
+      const opt = {
+        margin:       12,
+        filename:     filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function closeEditor() {
+      const doc = store.find(n => n.id === editingDocId);
+      if (doc) {
+        doc.title = document.getElementById('inp-title').value;
+        doc.code = document.getElementById('inp-code').value;
+        doc.intro = document.getElementById('inp-intro').value;
+        doc.main = document.getElementById('inp-main').value;
+        doc.author = document.getElementById('inp-author').value;
+        doc.role = document.getElementById('inp-role').value;
+        doc.date = document.getElementById('inp-date').value;
+
+        doc.font = document.getElementById('cfg-font').value;
+        doc.bgColor = document.getElementById('cfg-bg').value;
+        doc.images = currentImages;
+
+        saveState();
+        renderBoard();
+      }
+      document.getElementById('editor-modal').style.display = 'none';
+    }
   </script>
 </body>
 </html>
