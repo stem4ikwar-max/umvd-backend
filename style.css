@@ -5,34 +5,32 @@
   font-family: 'Inter', sans-serif;
 }
 
-body {
-  background-color: #0d0f12;
-  color: #e2e8f0;
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
-}
-
-#dots-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
+body, html {
   width: 100%;
   height: 100%;
-  background-image: radial-gradient(#1e232d 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-color: #0b0e14;
+  color: #e5e7eb;
+  overflow: hidden;
+}
+
+/* Фон с точками */
+#dots-bg {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: radial-gradient(#282d37 1px, transparent 1px);
+  background-size: 24px 24px;
   z-index: 0;
 }
 
 /* Авторизация */
 #auth-screen {
   position: fixed;
-  inset: 0;
-  background: rgba(13, 15, 18, 0.95);
+  top: 0; left: 0; width: 100%; height: 100%;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
+  background: rgba(11, 14, 20, 0.8);
 }
 
 .auth-card {
@@ -56,140 +54,131 @@ body {
   padding: 8px;
   cursor: pointer;
   color: #9ca3af;
-  font-size: 0.9rem;
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .auth-tab.active {
-  color: #60a5fa;
+  color: #fff;
   border-bottom: 2px solid #60a5fa;
 }
 
-input[type="text"], input[type="password"] {
+input.form-control, .auth-card input {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  background: #1c2029;
+  background: #0b0e14;
   border: 1px solid #282d37;
-  border-radius: 6px;
+  padding: 10px 12px;
   color: #fff;
-  font-size: 0.85rem;
+  border-radius: 6px;
+  margin-bottom: 12px;
   outline: none;
+  font-size: 0.9rem;
 }
 
-input[type="text"]:focus, input[type="password"]:focus {
+input:focus {
   border-color: #60a5fa;
 }
 
+/* Кнопки */
 .btn-main {
-  width: 100%;
-  padding: 10px;
   background: #2563eb;
   color: #fff;
   border: none;
+  padding: 10px 16px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
+  width: 100%;
+  font-size: 0.9rem;
+  transition: background 0.2s;
 }
-
-.btn-main:hover {
-  background: #1d4ed8;
-}
+.btn-main:hover { background: #1d4ed8; }
 
 .btn-outline {
-  padding: 8px 12px;
   background: transparent;
+  color: #9ca3af;
   border: 1px solid #282d37;
-  color: #ccc;
+  padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 0.9rem;
 }
-
-.btn-outline:hover {
-  background: #282d37;
-}
+.btn-outline:hover { color: #fff; border-color: #4b5563; }
 
 .btn-tool {
-  background: #15181e;
+  background: #1e222b;
+  color: #e5e7eb;
   border: 1px solid #282d37;
-  color: #fff;
   padding: 6px 12px;
   border-radius: 6px;
-  font-size: 0.85rem;
   cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
 }
+.btn-tool:hover { background: #282d37; color: #fff; }
 
-.btn-tool:hover {
-  background: #1f242d;
-}
-
-/* Верхняя панель и Профиль */
+/* Рабочая зона */
 #board-viewport {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 10;
 }
 
 .top-bar {
   position: absolute;
-  top: 15px;
-  left: 15px;
+  top: 16px; left: 16px;
   display: flex;
-  gap: 10px;
-  z-index: 10;
+  gap: 8px;
+  z-index: 20;
 }
 
+/* Профиль */
 .profile-container {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 10;
+  top: 16px; right: 16px;
+  z-index: 30;
 }
 
 .avatar-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 40px; height: 40px;
   background: #2563eb;
   color: #fff;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .profile-dropdown {
   display: none;
   position: absolute;
-  right: 0;
-  top: 45px;
+  right: 0; top: 48px;
   background: #15181e;
   border: 1px solid #282d37;
-  padding: 12px;
   border-radius: 8px;
-  width: 180px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  width: 200px;
+  padding: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
 }
 
-/* Доска и карточки */
 #board-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
   overflow: auto;
+  z-index: 1;
 }
 
-/* Модалки */
+/* Модальные окна */
 .modal-overlay {
   display: none;
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  align-items: center;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
   justify-content: center;
+  align-items: center;
   z-index: 2000;
 }
 
@@ -200,26 +189,27 @@ input[type="text"]:focus, input[type="password"]:focus {
   border-radius: 10px;
   width: 100%;
   max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
-/* Редактор */
+/* Редактор документов */
 #editor-modal {
   display: none;
   position: fixed;
-  inset: 0;
-  background: #0d0f12;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: #0b0e14;
   z-index: 3000;
   flex-direction: column;
 }
 
 .editor-header {
-  height: 50px;
-  background: #15181e;
+  height: 60px;
   border-bottom: 1px solid #282d37;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: 0 20px;
+  background: #15181e;
 }
 
 .editor-body {
@@ -229,41 +219,38 @@ input[type="text"]:focus, input[type="password"]:focus {
 }
 
 .editor-left {
-  width: 450px;
-  background: #15181e;
+  width: 400px;
   border-right: 1px solid #282d37;
   padding: 20px;
   overflow-y: auto;
+  background: #11141b;
 }
 
 .editor-right {
   flex: 1;
-  background: #090a0c;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: auto;
+  background: #0b0e14;
   padding: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-y: auto;
 }
 
-/* Бланк A4 */
 .paper-doc {
-  width: 595px;
-  min-height: 842px;
-  background: #ffffff;
-  color: #000000;
+  background: #fff;
+  color: #000;
+  width: 650px;
+  min-height: 850px;
   padding: 50px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   position: relative;
-  font-family: 'Times New Roman', Times, serif;
 }
 
-/* Секции бланка */
 .section-block {
-  background: #1c2029;
+  background: #15181e;
   border: 1px solid #282d37;
-  border-radius: 6px;
   padding: 10px;
+  border-radius: 6px;
   margin-bottom: 10px;
 }
 
@@ -275,53 +262,28 @@ input[type="text"]:focus, input[type="password"]:focus {
 }
 
 .section-title {
-  font-size: 0.8rem;
   color: #60a5fa;
+  font-size: 0.8rem;
   font-weight: 600;
+  text-transform: uppercase;
 }
 
 .btn-remove-sec {
   background: transparent;
   border: none;
   color: #f87171;
-  font-size: 0.75rem;
   cursor: pointer;
+  font-size: 0.75rem;
 }
 
 .sec-textarea {
   width: 100%;
-  height: 70px;
-  background: #15181e;
+  background: #0b0e14;
   border: 1px solid #282d37;
-  border-radius: 4px;
   color: #fff;
   padding: 6px;
-  font-size: 0.85rem;
+  border-radius: 4px;
   resize: vertical;
-  outline: none;
-}
-
-/* Кастомная загрузка файла */
-.custom-file-upload {
-  display: inline-block;
-  width: 100%;
-  padding: 8px 12px;
-  cursor: pointer;
-  background: #181b20;
-  border: 1px dashed #3b82f6;
-  border-radius: 6px;
-  color: #60a5fa;
-  text-align: center;
+  min-height: 60px;
   font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.custom-file-upload:hover {
-  background: #1d2432;
-  border-color: #60a5fa;
-}
-
-.custom-file-upload input[type="file"] {
-  display: none;
 }
