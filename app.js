@@ -1,35 +1,55 @@
+// База пользователей (UID 1 - Главный Админ)
+let usersDB = [
+  { id: 1, username: 'Fanchik314G', password: '123', role: 'ADMIN', is_leader: true }
+];
+
 let currentUser = null;
+let currentAuthMode = 'login';
+
 let currentDocData = {
   code: 'LSPD-MIS-SD-001',
-  author: 'Павел Аграбейко',
-  role: 'Начальник УМВД',
+  author: 'Skeptic Drugonight',
+  role: 'Chief of the Los Santos Police Department',
   sections: [
-    { title: 'Без заголовка', text: 'Я, Skeptic Drugonight, Chief of the Los Santos Police Department...' },
+    { title: 'Без заголовка', text: 'Я, Skeptic Drugonight, Chief of the Los Santos Police Department, пользуясь своими полномочиями...' },
     { title: 'Установил', text: 'Пример содержимого...' },
     { title: 'Постановил', text: 'Пример содержимого...' },
     { title: 'Решил', text: 'Проголосовать заочно...' }
   ]
 };
 
-// Переключение вкладок Вход / Регистрация
-function switchAuthTab(tab) {
+// Вкладки авторизации
+function switchAuthTab(mode) {
+  currentAuthMode = mode;
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(`tab-${tab}`).classList.add('active');
-  document.getElementById('auth-title').innerText = tab === 'login' ? 'Вход в систему' : 'Регистрация';
-  document.getElementById('auth-submit-btn').innerText = tab === 'login' ? 'Войти' : 'Зарегистрироваться';
+  document.getElementById(`tab-${mode}`).classList.add('active');
+  document.getElementById('auth-title').innerText = mode === 'login' ? 'Вход в систему' : 'Регистрация';
+  document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Войти' : 'Зарегистрироваться';
 }
 
-// Авторизация
+// Вход / Регистрация
 function submitAuth() {
-  const user = document.getElementById('auth-username').value.trim();
-  if (!user) return alert('Введите логин!');
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value.trim();
 
-  currentUser = {
-    id: 101,
-    username: user,
-    role: user.toLowerCase() === 'admin' ? 'ADMIN' : 'USER',
-    is_leader: true // Включено для теста прав редактора
-  };
+  if (!username || !password) return alert('Заполните все поля!');
+
+  if (currentAuthMode === 'login') {
+    const user = usersDB.find(u => u.username === username && u.password === password);
+    if (!user) return alert('Неверный логин или пароль!');
+    currentUser = user;
+  } else {
+    if (usersDB.some(u => u.username === username)) return alert('Логин уже занят!');
+    const newUser = {
+      id: usersDB.length + 1, // UID начинается с 2, 3 и т.д.
+      username: username,
+      password: password,
+      role: 'USER',
+      is_leader: false
+    };
+    usersDB.push(newUser);
+    currentUser = newUser;
+  }
 
   document.getElementById('auth-screen').style.display = 'none';
   updateProfileUI();
@@ -42,38 +62,81 @@ function logout() {
   document.getElementById('profile-dropdown').style.display = 'none';
 }
 
-// Обновление профиля
-function updateProfileUI() {
-  if (!currentUser) return;
-  document.getElementById('prof-name').innerText = currentUser.username;
-  document.getElementById('prof-role').innerText = currentUser.role === 'ADMIN' ? 'Администратор' : (currentUser.is_leader ? 'Лидер' : 'Пользователь');
-  document.getElementById('prof-uid').innerText = `UID: ${currentUser.id}`;
-
-  const isPowerUser = currentUser.role === 'ADMIN' || currentUser.is_leader;
-  document.getElementById('leader-tools').style.display = isPowerUser ? 'flex' : 'none';
-  document.getElementById('btn-top-admin').style.display = currentUser.role === 'ADMIN' ? 'block' : 'none';
-  document.getElementById('leader-img-upload').style.display = isPowerUser ? 'block' : 'none';
-  document.getElementById('btn-save-doc').style.display = isPowerUser ? 'block' : 'none';
-  document.getElementById('avatar-btn').innerText = currentUser.username.charAt(0).toUpperCase();
-}
-
-// Переключение меню профиля
+// Переключение профиля
 function toggleProfileMenu() {
   const dropdown = document.getElementById('profile-dropdown');
   dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
 }
 
-// Управление модальными окнами
-function openLeaderModal() { document.getElementById('leader-modal').style.display = 'flex'; }
-function openAdminModal() { document.getElementById('admin-modal').style.display = 'flex'; }
-function openEditor() { 
+// Отрисовка профиля и прав
+function updateProfileUI() {
+  if (!currentUser) return;
+
+  document.getElementById('prof-name').innerText = currentUser.username;
+  document.getElementById('prof-role').innerText = currentUser.role === 'ADMIN' ? 'Администратор' : (currentUser.is_leader ? 'Лидер' : 'Пользователь');
+  document.getElementById('prof-uid').innerText = `UID: ${currentUser.id}`;
+  document.getElementById('avatar-btn').innerText = currentUser.username.charAt(0).toUpperCase();
+
+  const isPowerUser = currentUser.role === 'ADMIN' || currentUser.is_leader;
+  
+  document.getElementById('leader-tools').style.display = isPowerUser ? 'flex' : 'none';
+  document.getElementById('btn-top-admin').style.display = currentUser.role === 'ADMIN' ? 'block' : 'none';
+  document.getElementById('leader-img-upload').style.display = isPowerUser ? 'block' : 'none';
+  document.getElementById('btn-save-doc').style.display = isPowerUser ? 'block' : 'none';
+}
+
+// Модалки
+function openLeaderModal() { 
+  document.getElementById('leader-modal').style.display = 'flex'; 
+}
+
+function openAdminModal() {
+  if (currentUser.role !== 'ADMIN') return;
+  const list = document.getElementById('admin-users-list');
+  list.innerHTML = '';
+
+  usersDB.forEach(user => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #282d37';
+    tr.innerHTML = `
+      <td style="padding:6px;">${user.id}</td>
+      <td style="padding:6px;">${user.username}</td>
+      <td style="padding:6px; color:#60a5fa;">${user.role}</td>
+      <td style="padding:6px;">${user.is_leader ? '👑 Да' : 'Нет'}</td>
+      <td style="padding:6px; text-align:right;">
+        ${user.id !== 1 ? `<button class="btn-tool" style="font-size:0.75rem;" onclick="toggleLeader(${user.id})">${user.is_leader ? 'Снять Лидера' : 'Выдать Лидерку'}</button>` : '<i>Главный Админ</i>'}
+      </td>
+    `;
+    list.appendChild(tr);
+  });
+
+  document.getElementById('admin-modal').style.display = 'flex';
+}
+
+function toggleLeader(userId) {
+  const user = usersDB.find(u => u.id === userId);
+  if (user) {
+    user.is_leader = !user.is_leader;
+    openAdminModal();
+    if (currentUser.id === user.id) updateProfileUI();
+  }
+}
+
+// Открытие редактора
+function openEditor() {
   document.getElementById('editor-modal').style.display = 'flex';
   renderSectionBlocks();
 }
-function closeEditor() { document.getElementById('editor-modal').style.display = 'none'; }
-function resetZoom() { alert('Зум сброшен'); }
 
-// Логика секций документа
+function closeEditor() {
+  document.getElementById('editor-modal').style.display = 'none';
+}
+
+function resetZoom() {
+  alert('Зум сброшен');
+}
+
+// Логика блоков
 function renderSectionBlocks() {
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
@@ -108,11 +171,11 @@ function updateSectionText(index, val) {
   renderPaper();
 }
 
-// Отрисовка бумажного бланка
+// Отрисовка бланка
 function renderPaper() {
   document.getElementById('p-code').innerText = document.getElementById('inp-code').value || 'LSPD-MIS-SD-001';
-  document.getElementById('p-author').innerText = document.getElementById('inp-author').value || 'П. Аграбейко';
-  document.getElementById('p-role').innerText = document.getElementById('inp-role').value || 'Начальник УМВД';
+  document.getElementById('p-author').innerText = document.getElementById('inp-author').value || 'Skeptic Drugonight';
+  document.getElementById('p-role').innerText = document.getElementById('inp-role').value || 'Chief of the Los Santos Police Department';
 
   const paperRender = document.getElementById('paper-sections-render');
   paperRender.innerHTML = '';
@@ -122,14 +185,13 @@ function renderPaper() {
     secDiv.style.marginBottom = '12px';
     
     if (sec.title && sec.title !== 'Без заголовка') {
-      secDiv.innerHTML = `<div style="text-align:center; font-weight:bold; margin:8px 0;">${sec.title.toLowerCase()}:</div>`;
+      secDiv.innerHTML = `<div style="text-align:center; font-weight:bold; margin:8px 0; text-transform: lowercase;">${sec.title}:</div>`;
     }
     secDiv.innerHTML += `<div style="text-align:justify; white-space:pre-line;">${sec.text}</div>`;
     paperRender.appendChild(secDiv);
   });
 }
 
-// Скачивание PNG
 function downloadPNG() {
   const paper = document.getElementById('paper-doc');
   html2canvas(paper).then(canvas => {
