@@ -3,107 +3,171 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>УМВД — Официальный Бланк</title>
+  <title>УМВД — Единая система документооборота и управления</title>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Times+New+Roman&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-    body { background: #111411; color: #e2e8f0; padding: 20px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #0f120f; color: #e2e8f0; min-height: 100vh; }
 
-    .auth-card { max-width: 360px; margin: 80px auto; background: #171b17; border: 1px solid #283228; padding: 30px; border-radius: 12px; }
-    .auth-card h2 { font-size: 1.2rem; margin-bottom: 16px; text-align: center; color: #fff; }
-    .auth-card input { width: 100%; padding: 10px; margin-bottom: 12px; background: #0f120f; border: 1px solid #283228; color: #fff; border-radius: 6px; }
+    /* Авторизация */
+    .auth-card { max-width: 380px; margin: 100px auto; background: #171b17; border: 1px solid #283228; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .auth-card h2 { font-size: 1.3rem; margin-bottom: 20px; text-align: center; color: #fff; }
+    .auth-card input { width: 100%; padding: 12px; margin-bottom: 14px; background: #0f120f; border: 1px solid #283228; color: #fff; border-radius: 6px; outline: none; }
+    .auth-card input:focus { border-color: #86efac; }
 
-    .btn { background: #86efac; color: #0e1f0e; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
+    .btn { background: #86efac; color: #0e1f0e; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s; }
+    .btn:hover { background: #bbf7d0; }
     .btn-sec { background: transparent; border: 1px solid #374151; color: #9ca3af; margin-top: 8px; }
+    .btn-sec:hover { background: #1f2937; color: #fff; }
 
-    #app { display: none; gap: 24px; max-width: 1300px; margin: 0 auto; }
+    /* Навигация */
+    #app { display: none; flex-direction: column; height: 100vh; }
+    header { background: #171c17; border-bottom: 1px solid #283328; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .nav-tabs { display: flex; gap: 12px; }
+    .tab-btn { background: #232d23; border: 1px solid #283328; color: #9ca3af; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .tab-btn.active { background: #86efac; color: #0e1f0e; border-color: #86efac; }
+
+    /* Основная область */
+    .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+
+    /* Доска задач (Figma-style) */
+    .board-container { display: flex; gap: 20px; overflow-x: auto; height: 100%; padding-bottom: 10px; }
+    .board-column { background: #171c17; border: 1px solid #283328; border-radius: 8px; width: 320px; min-width: 320px; display: flex; flex-direction: column; padding: 14px; }
+    .column-header { font-weight: bold; font-size: 1rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; color: #86efac; }
+    .task-list { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 100px; }
+    .task-card { background: #232d23; border: 1px solid #283328; padding: 12px; border-radius: 6px; cursor: grab; }
+    .task-card h4 { font-size: 0.95rem; margin-bottom: 6px; color: #fff; }
+    .task-card p { font-size: 0.8rem; color: #9ca3af; }
+
+    /* Конструктор документов */
+    .editor-container { display: flex; gap: 24px; max-width: 1300px; margin: 0 auto; }
     .panel { flex: 1; background: #171c17; border: 1px solid #283328; padding: 20px; border-radius: 10px; }
     .panel label { display: block; font-size: 0.8rem; color: #9ca3af; margin: 10px 0 4px; }
-    .panel input, .panel textarea { width: 100%; padding: 8px; background: #111411; border: 1px solid #283328; color: #fff; border-radius: 6px; }
-
-    .admin-box { background: #232d23; border: 1px dashed #86efac; padding: 12px; border-radius: 6px; margin-bottom: 15px; }
+    .panel input, .panel textarea { width: 100%; padding: 8px; background: #0f120f; border: 1px solid #283328; color: #fff; border-radius: 6px; }
 
     .preview-box { flex: 1; display: flex; flex-direction: column; align-items: center; }
     .paper-doc { width: 595px; min-height: 842px; background: #ffffff; color: #000000; padding: 50px; font-family: 'Times New Roman', serif; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    
     .doc-header { text-align: center; line-height: 1.2; margin-bottom: 25px; }
     .doc-header h3 { font-size: 13pt; text-transform: uppercase; font-weight: bold; }
     .doc-header p { font-size: 9.5pt; }
-
     .doc-recipient { margin-left: auto; width: 50%; font-size: 11pt; margin-bottom: 30px; }
     .doc-meta { display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 25px; font-size: 10pt; }
-
     .doc-body { font-size: 11pt; line-height: 1.4; text-indent: 25px; text-align: justify; min-height: 250px; }
     .doc-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; font-size: 11pt; }
-    
     .sign-container { position: relative; text-align: right; min-width: 160px; }
     .handwriting { font-family: 'Caveat', cursive; font-size: 28pt; position: absolute; top: -30px; left: 0; color: #0f2b5c; transform: rotate(-6deg); }
+
+    /* Админка */
+    .admin-container { max-width: 900px; margin: 0 auto; background: #171c17; border: 1px solid #283328; padding: 24px; border-radius: 10px; }
   </style>
 </head>
 <body>
 
+  <!-- Окно авторизации -->
   <div id="auth-screen" class="auth-card">
-    <h2 id="auth-title">Вход в систему</h2>
+    <h2 id="auth-title">Вход в систему УМВД</h2>
     <input type="text" id="auth-user" placeholder="Логин">
     <input type="password" id="auth-pass" placeholder="Пароль">
     <button class="btn" onclick="handleAuth()">Войти</button>
     <button class="btn btn-sec" onclick="toggleAuthMode()">Регистрация</button>
   </div>
 
+  <!-- Главный интерфейс приложения -->
   <div id="app">
-    <div class="panel">
-      <div id="user-bar" style="font-size: 0.85rem; color: #86efac; margin-bottom: 12px;"></div>
+    <header>
+      <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('board')">📋 Доска задач</button>
+        <button class="tab-btn" onclick="switchTab('editor')">📄 Редактор бланков</button>
+        <button class="tab-btn" id="admin-tab-btn" style="display:none;" onclick="switchTab('admin')">👑 Админ-панель</button>
+      </div>
+      <div id="user-bar" style="font-size: 0.85rem; color: #86efac;"></div>
+    </header>
 
-      <div id="admin-panel" class="admin-box" style="display: none;">
-        👑 <b>Администратор</b> (Доступ к управлению структурой)
+    <div class="main-content">
+      <!-- Вкладка: Интерактивная доска -->
+      <div id="tab-board">
+        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+          <input type="text" id="new-task-title" placeholder="Название задачи / делопроизводства..." style="padding: 8px; background: #171c17; border: 1px solid #283328; color: #fff; border-radius: 6px; width: 300px;">
+          <button class="btn" style="width: auto;" onclick="addTask()">+ Добавить дело</button>
+        </div>
+        <div class="board-container">
+          <div class="board-column">
+            <div class="column-header">В работе</div>
+            <div class="task-list" id="col-progress"></div>
+          </div>
+          <div class="board-column">
+            <div class="column-header">На подписи</div>
+            <div class="task-list" id="col-review"></div>
+          </div>
+          <div class="board-column">
+            <div class="column-header">Завершено</div>
+            <div class="task-list" id="col-done"></div>
+          </div>
+        </div>
       </div>
 
-      <label>Кому (ФИО адресата):</label>
-      <input type="text" id="in-to" value="Е.В. Могилеву" oninput="renderDoc()">
-      
-      <label>Адрес адресата:</label>
-      <input type="text" id="in-addr" value="ул. Липецкая, д. 7, г. Волгоград, 400120" oninput="renderDoc()">
+      <!-- Вкладка: Редактор документов -->
+      <div id="tab-editor" style="display: none;">
+        <div class="editor-container">
+          <div class="panel">
+            <label>Кому (ФИО адресата):</label>
+            <input type="text" id="in-to" value="Е.В. Могилеву" oninput="renderDoc()">
+            
+            <label>Адрес адресата:</label>
+            <input type="text" id="in-addr" value="ул. Липецкая, д. 7, г. Волгоград, 400120" oninput="renderDoc()">
 
-      <label>Текст документа:</label>
-      <textarea id="in-body" rows="6" oninput="renderDoc()">Ваше обращение в адрес Министерства внутренних дел Российской Федерации рассмотрено.</textarea>
+            <label>Текст документа:</label>
+            <textarea id="in-body" rows="6" oninput="renderDoc()">Ваше обращение в адрес Министерства внутренних дел Российской Федерации рассмотрено.</textarea>
 
-      <label>Должность подписывающего:</label>
-      <input type="text" id="in-role" value="Заместитель начальника" oninput="renderDoc()">
+            <label>Должность подписывающего:</label>
+            <input type="text" id="in-role" value="Заместитель начальника" oninput="renderDoc()">
 
-      <label>Инициалы и Фамилия (например: А.Н. Хабаров):</label>
-      <input type="text" id="in-name" value="А.Н. Хабаров" oninput="renderDoc()">
+            <label>Инициалы и Фамилия (например: А.Н. Хабаров):</label>
+            <input type="text" id="in-name" value="А.Н. Хабаров" oninput="renderDoc()">
 
-      <button class="btn" style="margin-top: 15px;" onclick="downloadPNG()">📸 Скачать PNG</button>
-    </div>
-
-    <div class="preview-box">
-      <div class="paper-doc" id="paper-doc">
-        <div class="doc-header">
-          <h3>Министерство Внутренних Дел<br>Российской Федерации</h3>
-          <p><b>(МВД России)</b></p>
-          <p style="margin-top: 6px;"><b>Департамент кадрового обеспечения</b></p>
-          <p style="font-size: 8pt; color: #444;">Газетный пер., 6, Москва, 125009</p>
-        </div>
-
-        <div class="doc-recipient">
-          <p id="out-to">Е.В. Могилеву</p>
-          <p id="out-addr">ул. Липецкая, д. 7</p>
-        </div>
-
-        <div class="doc-meta">
-          <span>на № ________ от ________</span>
-          <span>№ 21/М-2764</span>
-        </div>
-
-        <div class="doc-body" id="out-body"></div>
-
-        <div class="doc-footer">
-          <div id="out-role">Заместитель начальника</div>
-          <div class="sign-container">
-            <span class="handwriting" id="out-sign">Хабаров</span>
-            <span id="out-name">А.Н. Хабаров</span>
+            <button class="btn" style="margin-top: 15px;" onclick="downloadPNG()">📸 Скачать PNG</button>
           </div>
+
+          <div class="preview-box">
+            <div class="paper-doc" id="paper-doc">
+              <div class="doc-header">
+                <h3>Министерство Внутренних Дел<br>Российской Федерации</h3>
+                <p><b>(МВД России)</b></p>
+                <p style="margin-top: 6px;"><b>Департамент кадрового обеспечения</b></p>
+                <p style="font-size: 8pt; color: #444;">Газетный пер., 6, Москва, 125009</p>
+              </div>
+
+              <div class="doc-recipient">
+                <p id="out-to">Е.В. Могилеву</p>
+                <p id="out-addr">ул. Липецкая, д. 7</p>
+              </div>
+
+              <div class="doc-meta">
+                <span>на № ________ от ________</span>
+                <span>№ 21/М-2764</span>
+              </div>
+
+              <div class="doc-body" id="out-body"></div>
+
+              <div class="doc-footer">
+                <div id="out-role">Заместитель начальника</div>
+                <div class="sign-container">
+                  <span class="handwriting" id="out-sign">Хабаров</span>
+                  <span id="out-name">А.Н. Хабаров</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Вкладка: Админ-панель -->
+      <div id="tab-admin" style="display: none;">
+        <div class="admin-container">
+          <h3 style="margin-bottom: 15px;">Управление системой и лидерами</h3>
+          <p style="color: #9ca3af; font-size: 0.9rem; margin-bottom: 20px;">Здесь администратор может изменять права сотрудников, распределять доступ по отделам и управлять ролями.</p>
+          <button class="btn" style="width: auto;" onclick="toggleLeaderMode()">Переключить статус лидера</button>
         </div>
       </div>
     </div>
@@ -118,9 +182,11 @@
     let username = localStorage.getItem('username');
     let uid = localStorage.getItem('uid');
 
+    let tasks = JSON.parse(localStorage.getItem('mvd_tasks') || '[]');
+
     function toggleAuthMode() {
       isRegMode = !isRegMode;
-      document.getElementById('auth-title').innerText = isRegMode ? 'Регистрация' : 'Вход в систему';
+      document.getElementById('auth-title').innerText = isRegMode ? 'Регистрация' : 'Вход в систему УМВД';
     }
 
     async function handleAuth() {
@@ -162,14 +228,64 @@
     function showMainApp() {
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
-      document.getElementById('user-bar').innerText = `Пользователь: ${username} | UID: ${uid} | Роль: ${userRole}`;
+      document.getElementById('user-bar').innerText = `Сотрудник: ${username} | UID: ${uid} | Роль: ${userRole}`;
 
       if (userRole === 'admin') {
-        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-tab-btn').style.display = 'inline-block';
       }
+      renderBoard();
       renderDoc();
     }
 
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('tab-board').style.display = 'none';
+      document.getElementById('tab-editor').style.display = 'none';
+      document.getElementById('tab-admin').style.display = 'none';
+
+      if (tab === 'board') {
+        document.getElementById('tab-board').style.display = 'block';
+        event.target.classList.add('active');
+      } else if (tab === 'editor') {
+        document.getElementById('tab-editor').style.display = 'block';
+        event.target.classList.add('active');
+      } else if (tab === 'admin') {
+        document.getElementById('tab-admin').style.display = 'block';
+        event.target.classList.add('active');
+      }
+    }
+
+    /* Логика Доски задач */
+    function renderBoard() {
+      const colProgress = document.getElementById('col-progress');
+      const colReview = document.getElementById('col-review');
+      const colDone = document.getElementById('col-done');
+
+      colProgress.innerHTML = '';
+      colReview.innerHTML = '';
+      colDone.innerHTML = '';
+
+      tasks.forEach((task, index) => {
+        const el = document.createElement('div');
+        el.className = 'task-card';
+        el.innerHTML = `<h4>${task.title}</h4><p>Создал: ${task.author}</p>`;
+        
+        if (task.status === 'progress') colProgress.appendChild(el);
+        else if (task.status === 'review') colReview.appendChild(el);
+        else if (task.status === 'done') colDone.appendChild(el);
+      });
+    }
+
+    function addTask() {
+      const val = document.getElementById('new-task-title').value;
+      if (!val) return;
+      tasks.push({ title: val, author: username, status: 'progress' });
+      localStorage.setItem('mvd_tasks', JSON.stringify(tasks));
+      document.getElementById('new-task-title').value = '';
+      renderBoard();
+    }
+
+    /* Логика Генерации бланков */
     function renderDoc() {
       document.getElementById('out-to').innerText = document.getElementById('in-to').value;
       document.getElementById('out-addr').innerText = document.getElementById('in-addr').value;
@@ -194,6 +310,19 @@
       });
     }
 
+    async function toggleLeaderMode() {
+      const res = await fetch(`${API_URL}/api/admin/toggle-leader`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    /* Блокировка DevTools и Контекстного меню */
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('keydown', e => {
       if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
