@@ -45,7 +45,7 @@ db.serialize(() => {
     role TEXT
   )`);
 
-  // Создание администратора по умолчанию
+  // Создание администратора по умолчанию (логин: admin, пароль: admin123)
   db.get(`SELECT * FROM users WHERE username = ?`, ['admin'], (err, row) => {
     if (!row) {
       const hash = bcrypt.hashSync('admin123', 10);
@@ -63,7 +63,7 @@ db.serialize(() => {
   });
 });
 
-// Middleware проверки авторизации
+// Middleware проверки прав
 function requireAuth(req, res, next) {
   if (!req.session.user) return res.status(401).json({ error: 'Необходима авторизация' });
   next();
@@ -119,7 +119,7 @@ app.get('/api/me', (req, res) => {
   }
 });
 
-// Работа с доской
+// Доска
 app.get('/api/board', requireAuth, (req, res) => {
   db.get(`SELECT content FROM board_data WHERE id = 1`, [], (err, row) => {
     if (row && row.content) res.json(JSON.parse(row.content));
@@ -138,7 +138,7 @@ app.post('/api/board', requireAuth, (req, res) => {
   });
 });
 
-// Шаблоны Лидера
+// Бланки лидеров
 app.get('/api/leader/templates', requireAuth, (req, res) => {
   db.all(`SELECT * FROM leader_templates`, [], (err, rows) => {
     res.json(rows || []);
