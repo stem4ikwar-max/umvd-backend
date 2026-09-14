@@ -3,133 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>УМВД — Документооборот v4.0</title>
+  <title>УМВД — Документооборот v5.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
     body { background-color: #0d0f0d; color: #e2e8f0; overflow: hidden; height: 100vh; width: 100vw; }
 
-    /* Welcome Screen */
-    #welcome-screen {
-      position: fixed; inset: 0; background: radial-gradient(circle at center, #172017 0%, #090b09 100%); 
-      display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .welcome-card { 
-      background: rgba(23, 27, 23, 0.8); border: 1px solid #283228; padding: 40px; border-radius: 20px; 
-      text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); max-width: 460px; backdrop-filter: blur(10px); 
-    }
-    .welcome-card h1 { font-size: 1.6rem; margin-bottom: 8px; color: #fff; font-weight: 700; }
-    .welcome-card p { color: #8fa38f; font-size: 0.9rem; margin-bottom: 24px; }
-    
-    .btn-green { background: #4ade80; color: #062006; border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-    .btn-green:hover { background: #86efac; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3); }
+    /* Auth Screen */
+    #auth-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #172017 0%, #090b09 100%); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .auth-card { background: rgba(23, 27, 23, 0.9); border: 1px solid #283228; padding: 35px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 380px; backdrop-filter: blur(10px); }
+    .auth-card h1 { font-size: 1.4rem; margin-bottom: 20px; color: #fff; }
+    .auth-card input { width: 100%; background: #111411; border: 1px solid #283228; padding: 12px; border-radius: 8px; color: #fff; margin-bottom: 12px; outline: none; }
+    .auth-card input:focus { border-color: #4ade80; }
+    .auth-btns { display: flex; gap: 10px; margin-top: 10px; }
+    .btn-green { background: #4ade80; color: #062006; border: none; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; flex: 1; }
+    .btn-green:hover { background: #86efac; }
+    .btn-outline { background: transparent; border: 1px solid #374151; color: #d1d5db; padding: 10px; border-radius: 8px; cursor: pointer; flex: 1; }
 
-    /* Main Canvas */
-    #board-viewport { width: 100vw; height: 100vh; overflow: hidden; position: relative; background-color: #101410; cursor: grab; }
+    /* Top Navigation */
+    #board-viewport { width: 100vw; height: 100vh; position: relative; background-color: #101410; cursor: grab; }
     #board-viewport:active { cursor: grabbing; }
-    
-    #board-container { 
-      width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0;
-      background-image: radial-gradient(#242d24 1.5px, transparent 1.5px); background-size: 28px 28px; 
-    }
+    #board-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0; background-image: radial-gradient(#242d24 1.5px, transparent 1.5px); background-size: 28px 28px; }
     svg#connections-svg { position: absolute; inset: 0; width: 5000px; height: 5000px; pointer-events: none; z-index: 1; }
 
-    /* Top Bar */
     .top-bar { position: fixed; top: 16px; left: 16px; display: flex; gap: 10px; z-index: 100; align-items: center; background: rgba(18, 22, 18, 0.85); padding: 8px 12px; border-radius: 12px; border: 1px solid #283228; backdrop-filter: blur(8px); }
-    .btn-tool { background: #1a201a; border: 1px solid #2d382d; color: #d1d5db; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+    .btn-tool { background: #1a201a; border: 1px solid #2d382d; color: #d1d5db; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
     .btn-tool:hover { background: #252e25; color: #fff; border-color: #4ade80; }
-    .btn-tool.active { border-color: #4ade80; color: #4ade80; background: #1c2b1c; }
 
-    .leader-badge { padding: 6px 14px; border-radius: 20px; background: #1b261b; border: 1px solid #3e523e; color: #86efac; font-size: 0.8rem; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.2s; }
-    .leader-badge:hover { border-color: #86efac; }
-
+    /* Profile Menu Top Right */
+    .profile-container { position: fixed; top: 16px; right: 16px; z-index: 100; }
+    .avatar-btn { width: 44px; height: 44px; border-radius: 50%; background: #4ade80; color: #062006; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #86efac; box-shadow: 0 4px 12px rgba(0,0,0,0.5); user-select: none; }
+    .profile-dropdown { position: absolute; right: 0; top: 54px; background: #171c17; border: 1px solid #2b362b; border-radius: 12px; padding: 14px; width: 220px; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
+    .profile-info { border-bottom: 1px solid #283228; padding-bottom: 10px; margin-bottom: 10px; }
+    .profile-info .name { font-weight: 700; color: #fff; }
+    .profile-info .role-badge { font-size: 0.75rem; color: #86efac; margin-top: 4px; display: inline-block; background: #1c2b1c; padding: 2px 8px; border-radius: 10px; border: 1px solid #2d382d; }
+    
     /* Nodes */
-    .board-node { position: absolute; background: rgba(23, 28, 23, 0.95); border: 1px solid #283328; border-radius: 12px; padding: 14px 18px; min-width: 190px; cursor: grab; user-select: none; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: border-color 0.2s, box-shadow 0.2s; z-index: 2; backdrop-filter: blur(4px); }
-    .board-node:hover { border-color: #4ade80; box-shadow: 0 8px 25px rgba(74, 222, 128, 0.15); }
-    .board-node.selected-connect { border-color: #86efac; box-shadow: 0 0 16px rgba(134,239,172,0.5); }
-    .board-node.pinned { border-style: dashed; border-color: #f59e0b; }
+    .board-node { position: absolute; background: rgba(23, 28, 23, 0.95); border: 1px solid #283328; border-radius: 12px; padding: 14px 18px; min-width: 190px; cursor: grab; user-select: none; box-shadow: 0 8px 20px rgba(0,0,0,0.6); z-index: 2; backdrop-filter: blur(4px); }
     .board-node.node-folder { border-left: 4px solid #3b82f6; }
     .board-node.node-doc { border-left: 4px solid #4ade80; }
-
-    .node-type { font-size: 0.68rem; color: #8fa38f; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .node-type { font-size: 0.68rem; color: #8fa38f; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
     .node-title { font-size: 0.92rem; font-weight: 600; color: #f3f4f6; }
 
-    /* Context Menu */
-    #ctx-menu { position: fixed; background: #171c17; border: 1px solid #2b362b; border-radius: 10px; padding: 6px 0; width: 180px; display: none; z-index: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
-    .ctx-item { padding: 8px 14px; font-size: 0.85rem; color: #d1d5db; cursor: pointer; transition: background 0.15s; }
-    .ctx-item:hover { background: #253325; color: #86efac; }
-    .ctx-item.danger:hover { background: #3f1d1d; color: #f87171; }
-
-    /* Modals */
+    /* Modals & Editor */
     .custom-modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 3000; }
-    .custom-modal { background: #171c17; border: 1px solid #2b362b; border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8); }
-    .custom-modal h3 { font-size: 1.1rem; margin-bottom: 12px; color: #fff; }
-    .custom-modal label { display: block; font-size: 0.85rem; color: #9ca3af; margin-bottom: 8px; }
-    .custom-modal input { width: 100%; background: #111411; border: 1px solid #2b362b; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 0.95rem; outline: none; margin-bottom: 20px; }
-    .custom-modal input:focus { border-color: #4ade80; }
-    .custom-modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
-    .btn-modal-ok { background: #4ade80; color: #0e1f0e; border: none; padding: 8px 22px; border-radius: 16px; font-weight: 600; cursor: pointer; }
-    .btn-modal-cancel { background: transparent; border: 1px solid #374151; color: #d1d5db; padding: 8px 18px; border-radius: 16px; cursor: pointer; }
+    .custom-modal { background: #171c17; border: 1px solid #2b362b; border-radius: 16px; padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8); }
 
-    /* Editor Modal */
     #editor-modal { position: fixed; inset: 0; background: #0d0f0d; display: none; z-index: 2000; flex-direction: column; }
-    .editor-header { height: 56px; background: #141814; border-bottom: 1px solid #242d24; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-size: 0.85rem; color: #9ca3af; }
-    .editor-header-left { display: flex; align-items: center; gap: 15px; }
-    .btn-back { background: #1f271f; border: 1px solid #374737; color: #86efac; padding: 6px 16px; border-radius: 14px; font-weight: 600; cursor: pointer; }
-    .btn-back:hover { background: #283628; }
-    .btn-download { background: #2563eb; color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-weight: 600; cursor: pointer; margin-right: 10px; transition: background 0.2s; }
-    .btn-download:hover { background: #1d4ed8; }
-
+    .editor-header { height: 56px; background: #141814; border-bottom: 1px solid #242d24; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
     .editor-body { flex: 1; display: flex; overflow: hidden; }
     .editor-left { flex: 1; padding: 24px; overflow-y: auto; background: #111411; border-right: 1px solid #242d24; }
-    .leader-panel { background: #182218; border: 1px dashed #4ade80; padding: 16px; border-radius: 10px; margin-bottom: 20px; }
-    .leader-panel h4 { font-size: 0.85rem; color: #86efac; margin-bottom: 10px; text-transform: uppercase; }
-
+    .editor-right { flex: 1; background: #161b16; padding: 30px; display: flex; justify-content: center; overflow-y: auto; }
+    
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; font-size: 0.75rem; color: #9ca3af; margin-bottom: 6px; }
-    .form-control, select.form-control { width: 100%; background: #181f18; border: 1px solid #2b362b; border-radius: 8px; padding: 10px; color: #fff; font-size: 0.9rem; outline: none; }
-    .form-control:focus { border-color: #4ade80; }
+    .form-control { width: 100%; background: #181f18; border: 1px solid #2b362b; border-radius: 8px; padding: 10px; color: #fff; font-size: 0.9rem; outline: none; }
     textarea.form-control { resize: vertical; min-height: 70px; }
 
-    .img-item-control { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: #181f18; padding: 8px; border-radius: 6px; border: 1px solid #2b362b; }
-    .img-item-control input[type="text"] { flex: 1; }
-    .img-item-control input[type="number"] { width: 70px; }
-
-    .editor-right { flex: 1; background: #161b16; padding: 30px; display: flex; justify-content: center; overflow-y: auto; }
-    .paper-doc { width: 100%; max-width: 595px; background: #ffffff; color: #000; padding: 45px; border-radius: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: space-between; min-height: 842px; transition: all 0.2s; }
-    
+    .paper-doc { width: 100%; max-width: 595px; background: #ffffff; color: #000; padding: 45px; border-radius: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: space-between; min-height: 842px; }
     .doc-images-container { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin: 15px 0; }
     .doc-img-item { object-fit: contain; }
 
-    .doc-header-text { text-align: center; font-size: 11pt; font-weight: bold; text-transform: uppercase; line-height: 1.3; margin-bottom: 20px; }
-    .doc-body-text { font-size: 11pt; line-height: 1.5; text-align: justify; }
-    .doc-body-text h4 { font-size: 12pt; margin: 15px 0 15px 0; text-align: center; text-transform: uppercase; font-weight: bold; }
-
-    .doc-footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10pt; }
+    .user-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .user-table th, .user-table td { border: 1px solid #283228; padding: 8px; text-align: left; font-size: 0.85rem; }
+    .user-table th { background: #1a201a; color: #86efac; }
   </style>
 </head>
 <body>
 
-  <!-- Приветственный экран -->
-  <div id="welcome-screen">
-    <div class="welcome-card">
-      <h1>УМВД по Ленинградской области</h1>
-      <p>Система электронного документооборота v4.0</p>
-      <button class="btn-green" onclick="enterSystem()">Зайти в документооборот</button>
+  <!-- Авторизация / Регистрация -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <h1>УМВД ЭДО</h1>
+      <input type="text" id="auth-username" placeholder="Логин (Никнейм)">
+      <input type="password" id="auth-password" placeholder="Пароль">
+      <div class="auth-btns">
+        <button class="btn-green" onclick="handleAuth('/api/login')">Войти</button>
+        <button class="btn-outline" onclick="handleAuth('/api/register')">Регистрация</button>
+      </div>
     </div>
   </div>
 
-  <!-- Главная Доска с зумом и панорамированием -->
+  <!-- Главное пространство -->
   <div id="board-viewport">
     <div class="top-bar">
-      <button class="btn-tool" onclick="openInputModal('Создать тему/отдел', 'Название:', (val) => createNode('folder', val))">+ Тема</button>
-      <button class="btn-tool" onclick="openInputModal('Создать бумагу', 'Название документа:', (val) => createNode('doc', val))">+ Бумага</button>
-      <button class="btn-tool" id="btn-connect-mode" onclick="toggleConnectMode()">🔗 Соединить</button>
+      <div id="leader-tools" style="display:none; gap:10px;">
+        <button class="btn-tool" onclick="createNodePrompt('folder')">+ Тема</button>
+        <button class="btn-tool" onclick="createNodePrompt('doc')">+ Бумага</button>
+      </div>
       <button class="btn-tool" onclick="resetZoom()">🎯 Сброс зума</button>
-      <div class="leader-badge" id="leader-toggle" onclick="toggleLeaderMode()">👑 Режим Лидера: ВЫКЛ</div>
+    </div>
+
+    <!-- Аватар пользователя справа сверху -->
+    <div class="profile-container">
+      <div class="avatar-btn" id="avatar-btn" onclick="toggleProfileMenu()">U</div>
+      <div class="profile-dropdown" id="profile-dropdown">
+        <div class="profile-info">
+          <div class="name" id="prof-name">Пользователь</div>
+          <div class="role-badge" id="prof-role">Обычный пользователь</div>
+          <div style="font-size: 0.7rem; color: #6b7280; margin-top: 4px;">UID: <span id="prof-uid">1</span></div>
+        </div>
+        <button class="btn-tool" id="btn-admin-modal" style="width:100%; margin-bottom: 8px; display:none;" onclick="openAdminModal()">👑 Админ-панель</button>
+        <button class="btn-tool" style="width:100%; color:#f87171;" onclick="logout()">Выйти</button>
+      </div>
     </div>
     
     <div id="board-container">
@@ -137,24 +116,27 @@
     </div>
   </div>
 
-  <!-- Контекстное меню -->
-  <div id="ctx-menu">
-    <div class="ctx-item" onclick="ctxRename()">Переименовать</div>
-    <div class="ctx-item" onclick="ctxStartConnect()">Присоединить к...</div>
-    <div class="ctx-item" onclick="ctxRemoveParent()">Отсоединить</div>
-    <div class="ctx-item" onclick="ctxTogglePin()">Закрепить / Разблокировать</div>
-    <div class="ctx-item danger" onclick="ctxDelete()">Удалить</div>
-  </div>
-
-  <!-- Модальное окно ввода -->
-  <div class="custom-modal-overlay" id="input-modal">
+  <!-- Админ-модалка -->
+  <div class="custom-modal-overlay" id="admin-modal">
     <div class="custom-modal">
-      <h3 id="modal-title">Подтвердите действие</h3>
-      <label id="modal-label">Введите значение:</label>
-      <input type="text" id="modal-input" autocomplete="off">
-      <div class="custom-modal-btns">
-        <button class="btn-modal-ok" onclick="submitInputModal()">ОК</button>
-        <button class="btn-modal-cancel" onclick="closeInputModal()">Отмена</button>
+      <h3>Администрирование УМВД</h3>
+      <p style="font-size: 0.8rem; color: #9ca3af; margin-bottom: 10px;">Список пользователей и выдача прав Лидера:</p>
+      <div style="max-height: 250px; overflow-y: auto;">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>UID</th>
+              <th>Ник</th>
+              <th>Роль</th>
+              <th>Лидер</th>
+              <th>Действие</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-list"></tbody>
+        </table>
+      </div>
+      <div style="margin-top: 15px; text-align: right;">
+        <button class="btn-outline" onclick="document.getElementById('admin-modal').style.display='none'">Закрыть</button>
       </div>
     </div>
   </div>
@@ -162,47 +144,35 @@
   <!-- Редактор документа -->
   <div id="editor-modal">
     <div class="editor-header">
-      <div class="editor-header-left">
-        <button class="btn-back" onclick="closeEditor()">← На главную</button>
-        <span id="ed-breadcrumb">УМВД > Документ</span>
-      </div>
+      <span id="ed-breadcrumb" style="color:#86efac; font-weight:600;">Документ</span>
       <div>
-        <button class="btn-download" onclick="downloadPDF()">📥 Скачать PDF</button>
-        <button class="btn-green" onclick="closeEditor()">Сохранить и закрыть</button>
+        <button class="btn-tool" style="background:#2563eb; color:#fff;" onclick="downloadPDF()">📥 Скачать PDF</button>
+        <button class="btn-green" onclick="closeEditor()" style="margin-left:8px;">Сохранить и закрыть</button>
       </div>
     </div>
     <div class="editor-body">
-      <!-- Настройки слева -->
       <div class="editor-left">
-        <div class="leader-panel" id="leader-controls" style="display: none;">
-          <h4>👑 Настройка бланка (Режим Лидера)</h4>
+        <!-- Настройки Лидера -->
+        <div id="leader-editor-controls" style="display:none; background:#182218; border:1px dashed #4ade80; padding:12px; border-radius:8px; margin-bottom:15px;">
+          <h4 style="font-size:0.8rem; color:#86efac; margin-bottom:8px;">👑 Панель Лидера: Настройка Бланка</h4>
           <div class="form-group">
-            <label>Шрифт бланка</label>
+            <label>Шрифт документа</label>
             <select id="cfg-font" class="form-control" onchange="updatePaper()">
-              <option value="'Times New Roman', serif">Times New Roman (Классика)</option>
-              <option value="'Inter', sans-serif">Inter (Современный)</option>
-              <option value="'Montserrat', sans-serif">Montserrat (Строгий)</option>
-              <option value="'Roboto', sans-serif">Roboto</option>
+              <option value="'Times New Roman', serif">Times New Roman</option>
+              <option value="'Inter', sans-serif">Inter</option>
             </select>
           </div>
           <div class="form-group">
             <label>Изображения (Гербы / Печати / Скриншоты)</label>
             <div id="images-list"></div>
-            <div style="display: flex; gap: 8px; margin-top: 6px;">
-              <button class="btn-tool" style="flex:1; justify-content:center;" onclick="addImageControl()">+ Ссылка (URL)</button>
-              <label class="btn-tool" style="flex:1; justify-content:center; cursor:pointer;">
-                📁 С ПК <input type="file" accept="image/*" style="display:none;" onchange="uploadImageFromFile(event)">
-              </label>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Цвет фона листа</label>
-            <input type="color" id="cfg-bg" value="#ffffff" class="form-control" style="height:40px; padding:2px;" oninput="updatePaper()">
+            <label class="btn-tool" style="margin-top:6px; cursor:pointer; justify-content:center;">
+              📁 Загрузить фото <input type="file" accept="image/*" style="display:none;" onchange="uploadImageFromFile(event)">
+            </label>
           </div>
         </div>
 
         <div class="form-group">
-          <label>Заголовок / Название документа</label>
+          <label>Название документа</label>
           <input type="text" id="inp-title" class="form-control" oninput="updatePaper()">
         </div>
         <div class="form-group">
@@ -214,13 +184,13 @@
           <textarea id="inp-intro" class="form-control" oninput="updatePaper()"></textarea>
         </div>
         <div class="form-group">
-          <label>Постановительная часть / Основной текст</label>
-          <textarea id="inp-main" class="form-control" style="min-height: 140px;" oninput="updatePaper()"></textarea>
+          <label>Основной текст / Постановление</label>
+          <textarea id="inp-main" class="form-control" style="min-height: 120px;" oninput="updatePaper()"></textarea>
         </div>
         <div style="display: flex; gap: 10px;">
           <div class="form-group" style="flex: 1;">
-            <label>Автор (ФИО)</label>
-            <input type="text" id="inp-author" class="form-control" oninput="updatePaper()">
+            <label>Автор (ФИО полностью)</label>
+            <input type="text" id="inp-author" placeholder="Павел Аграбейко" class="form-control" oninput="updatePaper()">
           </div>
           <div class="form-group" style="flex: 1;">
             <label>Должность</label>
@@ -233,11 +203,10 @@
         </div>
       </div>
 
-      <!-- Предпросмотр листа -->
       <div class="editor-right">
         <div class="paper-doc" id="paper-doc">
           <div>
-            <div class="doc-header-text">
+            <div style="text-align: center; font-size: 11pt; font-weight: bold; text-transform: uppercase; line-height: 1.3; margin-bottom: 15px;">
               Управление Министерства Внутренних Дел<br>
               по Ленинградской области<br>
               <small id="p-code" style="font-weight: normal; font-size: 9pt;">УМВД-RES-001</small>
@@ -245,19 +214,19 @@
             
             <div class="doc-images-container" id="p-images-box"></div>
 
-            <hr style="margin-bottom: 20px; border: 0; border-top: 1px solid #000;">
+            <hr style="margin-bottom: 15px; border: 0; border-top: 1px solid #000;">
             
-            <div class="doc-body-text">
-              <h4 id="p-title-head">ПОСТАНОВЛЕНИЕ</h4>
+            <div style="font-size: 11pt; line-height: 1.5; text-align: justify;">
+              <h4 id="p-title-head" style="font-size: 12pt; margin-bottom: 15px; text-align: center; text-transform: uppercase;">ПОСТАНОВЛЕНИЕ</h4>
               <p id="p-intro" style="margin-bottom: 15px;"></p>
               <p id="p-main" style="white-space: pre-line;"></p>
             </div>
           </div>
 
-          <div class="doc-footer">
+          <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10pt;">
             <div>
               <strong id="p-role">Начальник УМВД</strong><br>
-              <span id="p-author">Иван Иванов</span>
+              <span id="p-author">П. Аграбейко</span>
             </div>
             <div>
               <span id="p-date">14.09.2026</span>
@@ -269,97 +238,90 @@
   </div>
 
   <script>
-    const defaultData = [
-      { id: '1', type: 'folder', title: 'Руководство УМВД', x: 400, y: 150, pinned: false, parentId: null },
-      { id: '2', type: 'folder', title: 'Следственный Отдел', x: 200, y: 320, pinned: false, parentId: '1' },
-      { id: '3', type: 'doc', title: 'Постановление №1', x: 200, y: 500, pinned: false, parentId: '2', 
-        code: 'УМВД-SO-001', 
-        intro: 'Я, Следователь УМВД по Ленинградской области, рассмотрев материалы уголовного дела...', 
-        main: '1. Возбудить уголовное дело №102.\n2. Принять дело к своему производству.', 
-        author: 'Павел Смирнов', role: 'Следователь', date: '14.09.2026',
-        font: "'Times New Roman', serif", images: [], bgColor: '#ffffff'
-      }
-    ];
-
-    let store = JSON.parse(localStorage.getItem('umvd_board_v4')) || defaultData;
-    let selectedNodeId = null;
-    let connectSourceId = null;
-    let connectMode = false;
-    let isLeaderMode = false;
-
-    // Панорамирование и зум
-    let scale = 1;
-    let panX = 0;
-    let panY = 0;
-    let isPanning = false;
-    let panStart = { x: 0, y: 0 };
-
-    let activeDragNode = null;
-    let dragOffset = { x: 0, y: 0 };
+    let currentUser = null;
+    let store = [];
+    let scale = 1, panX = 0, panY = 0;
+    let editingDocId = null;
     let currentImages = [];
 
     const viewport = document.getElementById('board-viewport');
     const board = document.getElementById('board-container');
     const svg = document.getElementById('connections-svg');
-    const ctxMenu = document.getElementById('ctx-menu');
 
-    function saveState() {
-      localStorage.setItem('umvd_board_v4', JSON.stringify(store));
-    }
-
-    function enterSystem() {
-      document.getElementById('welcome-screen').style.display = 'none';
-      renderBoard();
-      updateTransform();
-    }
-
-    // Управление трансформом доски (Zoom & Pan)
-    function updateTransform() {
-      board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-    }
-
-    function resetZoom() {
-      scale = 1; panX = 0; panY = 0;
-      updateTransform();
-    }
-
-    viewport.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const zoomFactor = 1.1;
-      if (e.deltaY < 0) {
-        scale = Math.min(scale * zoomFactor, 2.5);
+    // Авторизация
+    async function checkAuthStatus() {
+      const res = await fetch('/api/me');
+      const data = await res.json();
+      if (data.loggedIn) {
+        currentUser = data.user;
+        document.getElementById('auth-screen').style.display = 'none';
+        setupProfileUI();
+        loadBoard();
       } else {
-        scale = Math.max(scale / zoomFactor, 0.4);
+        document.getElementById('auth-screen').style.display = 'flex';
       }
-      updateTransform();
-    }, { passive: false });
+    }
 
-    viewport.addEventListener('mousedown', (e) => {
-      if (e.button === 1 || e.button === 2) { // Колесико или ПКМ по полю
-        if (e.target === viewport || e.target === board || e.target === svg) {
-          isPanning = true;
-          panStart.x = e.clientX - panX;
-          panStart.y = e.clientY - panY;
-        }
+    async function handleAuth(url) {
+      const username = document.getElementById('auth-username').value;
+      const password = document.getElementById('auth-password').value;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        checkAuthStatus();
+      } else {
+        alert(data.error || 'Ошибка входа');
       }
-    });
+    }
 
-    window.addEventListener('mousemove', (e) => {
-      if (isPanning) {
-        panX = e.clientX - panStart.x;
-        panY = e.clientY - panStart.y;
-        updateTransform();
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST' });
+      location.reload();
+    }
+
+    function setupProfileUI() {
+      document.getElementById('avatar-btn').innerText = currentUser.username.charAt(0).toUpperCase();
+      document.getElementById('prof-name').innerText = currentUser.username;
+      document.getElementById('prof-uid').innerText = currentUser.id;
+
+      let roleText = 'Обычный пользователь';
+      if (currentUser.role === 'ADMIN') roleText = 'Администратор';
+      else if (currentUser.is_leader) roleText = 'Лидер';
+      
+      document.getElementById('prof-role').innerText = roleText;
+
+      if (currentUser.is_leader || currentUser.role === 'ADMIN') {
+        document.getElementById('leader-tools').style.display = 'flex';
+        document.getElementById('leader-editor-controls').style.display = 'block';
       }
-    });
+      if (currentUser.role === 'ADMIN') {
+        document.getElementById('btn-admin-modal').style.display = 'block';
+      }
+    }
 
-    window.addEventListener('mouseup', () => isPanning = false);
+    function toggleProfileMenu() {
+      const el = document.getElementById('profile-dropdown');
+      el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
 
-    function toggleLeaderMode() {
-      isLeaderMode = !isLeaderMode;
-      const btn = document.getElementById('leader-toggle');
-      btn.innerText = `👑 Режим Лидера: ${isLeaderMode ? 'ВКЛ' : 'ВЫКЛ'}`;
-      btn.style.borderColor = isLeaderMode ? '#86efac' : '#3e523e';
-      document.getElementById('leader-controls').style.display = isLeaderMode ? 'block' : 'none';
+    // Доска
+    async function loadBoard() {
+      const res = await fetch('/api/board');
+      store = await res.json();
+      renderBoard();
+    }
+
+    async function saveBoard() {
+      if (!currentUser.is_leader && currentUser.role !== 'ADMIN') return;
+      await fetch('/api/board', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodes: store })
+      });
     }
 
     function renderBoard() {
@@ -368,38 +330,22 @@
       store.forEach(node => {
         const div = document.createElement('div');
         const isDoc = node.type === 'doc';
-        div.className = `board-node ${isDoc ? 'node-doc' : 'node-folder'} ${node.pinned ? 'pinned' : ''}`;
-        if (connectSourceId === node.id) div.classList.add('selected-connect');
-
+        div.className = `board-node ${isDoc ? 'node-doc' : 'node-folder'}`;
         div.style.left = node.x + 'px';
         div.style.top = node.y + 'px';
         div.dataset.id = node.id;
 
         div.innerHTML = `
-          <div class="node-type">${isDoc ? '📄 Документ' : '📁 Тема / Отдел'}</div>
+          <div class="node-type">${isDoc ? '📄 Документ' : '📁 Отдел'}</div>
           <div class="node-title">${node.title}</div>
         `;
 
-        div.addEventListener('mousedown', (e) => {
-          if (e.button === 0) startDrag(e, node);
-        });
+        // Драг-энд-дроп разрешен только Лидерам/Админам
+        if (currentUser.is_leader || currentUser.role === 'ADMIN') {
+          div.addEventListener('mousedown', (e) => { if (e.button === 0) startDrag(e, node); });
+        }
 
-        div.addEventListener('click', (e) => {
-          if (connectMode || connectSourceId) {
-            e.stopPropagation();
-            handleConnectClick(node.id);
-            return;
-          }
-          if (isDoc && !e.defaultPrevented) openEditor(node.id);
-        });
-
-        div.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          selectedNodeId = node.id;
-          showCtxMenu(e.clientX, e.clientY);
-        });
-
+        div.addEventListener('click', () => { if (isDoc) openEditor(node.id); });
         board.appendChild(div);
       });
 
@@ -413,18 +359,11 @@
           const parent = store.find(n => n.id === node.parentId);
           if (parent) {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            const x1 = parent.x + 95;
-            const y1 = parent.y + 35;
-            const x2 = node.x + 95;
-            const y2 = node.y + 35;
-
+            const x1 = parent.x + 95, y1 = parent.y + 35, x2 = node.x + 95, y2 = node.y + 35;
             const dx = Math.abs(x2 - x1) / 2;
-            const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-
-            path.setAttribute('d', d);
+            path.setAttribute('d', `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
             path.setAttribute('stroke', '#4ade80');
             path.setAttribute('stroke-width', '2.5');
-            path.setAttribute('stroke-dasharray', '5 5');
             path.setAttribute('fill', 'none');
             svg.appendChild(path);
           }
@@ -432,160 +371,82 @@
       });
     }
 
-    function toggleConnectMode() {
-      connectMode = !connectMode;
-      connectSourceId = null;
-      document.getElementById('btn-connect-mode').classList.toggle('active', connectMode);
-      renderBoard();
-    }
-
-    function handleConnectClick(targetId) {
-      if (!connectSourceId) {
-        connectSourceId = targetId;
-        renderBoard();
-      } else {
-        if (connectSourceId !== targetId) {
-          const target = store.find(n => n.id === targetId);
-          if (target) {
-            target.parentId = connectSourceId;
-            saveState();
-          }
-        }
-        connectSourceId = null;
-        connectMode = false;
-        document.getElementById('btn-connect-mode').classList.remove('active');
-        renderBoard();
-      }
-    }
-
-    function startDrag(e, node) {
-      if (node.pinned || connectMode) return;
-      activeDragNode = node;
-      dragOffset.x = (e.clientX / scale) - node.x;
-      dragOffset.y = (e.clientY / scale) - node.y;
-
-      document.addEventListener('mousemove', onDrag);
-      document.addEventListener('mouseup', stopDrag);
-    }
-
-    function onDrag(e) {
-      if (!activeDragNode) return;
-      activeDragNode.x = (e.clientX / scale) - dragOffset.x;
-      activeDragNode.y = (e.clientY / scale) - dragOffset.y;
-      
-      const el = document.querySelector(`[data-id="${activeDragNode.id}"]`);
-      if (el) {
-        el.style.left = activeDragNode.x + 'px';
-        el.style.top = activeDragNode.y + 'px';
-      }
-      drawLines();
-    }
-
-    function stopDrag() {
-      if (!activeDragNode) return;
-      activeDragNode = null;
-      document.removeEventListener('mousemove', onDrag);
-      document.removeEventListener('mouseup', stopDrag);
-      saveState();
-    }
-
-    // Modal Helpers
-    let modalCallback = null;
-    function openInputModal(title, label, callback) {
-      document.getElementById('modal-title').innerText = title;
-      document.getElementById('modal-label').innerText = label;
-      document.getElementById('modal-input').value = '';
-      document.getElementById('input-modal').style.display = 'flex';
-      document.getElementById('modal-input').focus();
-      modalCallback = callback;
-    }
-
-    function closeInputModal() {
-      document.getElementById('input-modal').style.display = 'none';
-      modalCallback = null;
-    }
-
-    function submitInputModal() {
-      const val = document.getElementById('modal-input').value.trim();
-      if (val && modalCallback) modalCallback(val);
-      closeInputModal();
-    }
-
-    function createNode(type, title) {
-      const id = Date.now().toString();
-      store.push({
-        id: id,
-        type: type,
-        title: title,
-        x: (-panX + 300) / scale + Math.random() * 50,
-        y: (-panY + 200) / scale + Math.random() * 50,
-        pinned: false,
-        parentId: null,
-        code: 'УМВД-00' + (store.length + 1),
-        intro: '', main: '', author: '', role: '', date: new Date().toLocaleDateString(),
-        font: "'Times New Roman', serif", images: [], bgColor: '#ffffff'
-      });
-      saveState();
-      renderBoard();
-    }
-
-    function showCtxMenu(x, y) {
-      ctxMenu.style.display = 'block';
-      ctxMenu.style.left = x + 'px';
-      ctxMenu.style.top = y + 'px';
-    }
-
-    window.addEventListener('click', () => ctxMenu.style.display = 'none');
-
-    function ctxRename() {
-      const node = store.find(n => n.id === selectedNodeId);
-      if (node) {
-        openInputModal('Переименование', 'Новое название:', (val) => {
-          node.title = val;
-          saveState();
-          renderBoard();
+    // Создание элементов
+    function createNodePrompt(type) {
+      const title = prompt(type === 'doc' ? 'Название документа:' : 'Название отдела:');
+      if (title) {
+        store.push({
+          id: Date.now().toString(),
+          type, title,
+          x: (-panX + 300) / scale, y: (-panY + 200) / scale,
+          code: 'УМВД-00' + (store.length + 1),
+          intro: '', main: '', author: '', role: '', date: new Date().toLocaleDateString(),
+          font: "'Times New Roman', serif", images: []
         });
-      }
-    }
-
-    function ctxStartConnect() {
-      connectSourceId = selectedNodeId;
-      connectMode = true;
-      document.getElementById('btn-connect-mode').classList.add('active');
-      renderBoard();
-    }
-
-    function ctxRemoveParent() {
-      const node = store.find(n => n.id === selectedNodeId);
-      if (node) {
-        node.parentId = null;
-        saveState();
+        saveBoard();
         renderBoard();
       }
     }
 
-    function ctxTogglePin() {
-      const node = store.find(n => n.id === selectedNodeId);
-      if (node) {
-        node.pinned = !node.pinned;
-        saveState();
-        renderBoard();
+    // Панорамирование / Зум
+    function updateTransform() { board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
+    function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
+
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      scale = e.deltaY < 0 ? Math.min(scale * 1.1, 2.5) : Math.max(scale / 1.1, 0.4);
+      updateTransform();
+    }, { passive: false });
+
+    // Админ Панель
+    async function openAdminModal() {
+      const res = await fetch('/api/admin/users');
+      const users = await res.json();
+      const tbody = document.getElementById('admin-users-list');
+      tbody.innerHTML = '';
+
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td>${u.role}</td>
+          <td>${u.is_leader ? '✅ Лидер' : '❌ Нет'}</td>
+          <td>
+            <button class="btn-tool" onclick="toggleLeader(${u.id}, ${!u.is_leader})">
+              ${u.is_leader ? 'Снять Лидерку' : 'Выдать Лидера'}
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('admin-modal').style.display = 'flex';
+    }
+
+    async function toggleLeader(userId, isLeader) {
+      await fetch('/api/admin/toggle-leader', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, isLeader })
+      });
+      openAdminModal();
+    }
+
+    // Форматирование ФИО подписи (Имя Фамилия -> И. Фамилия)
+    function formatAuthorSignature(fullName) {
+      if (!fullName) return '';
+      const parts = fullName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return `${parts[0].charAt(0).toUpperCase()}. ${parts[1]}`;
       }
+      return fullName;
     }
 
-    function ctxDelete() {
-      store = store.filter(n => n.id !== selectedNodeId && n.parentId !== selectedNodeId);
-      saveState();
-      renderBoard();
-    }
-
-    // Редактор Документа
-    let editingDocId = null;
-
+    // Редактор
     function openEditor(id) {
       const doc = store.find(n => n.id === id);
       if (!doc) return;
-
       editingDocId = id;
       currentImages = doc.images ? [...doc.images] : [];
 
@@ -598,18 +459,9 @@
       document.getElementById('inp-role').value = doc.role || '';
       document.getElementById('inp-date').value = doc.date || '';
 
-      document.getElementById('cfg-font').value = doc.font || "'Times New Roman', serif";
-      document.getElementById('cfg-bg').value = doc.bgColor || '#ffffff';
-
       renderImageControls();
       updatePaper();
       document.getElementById('editor-modal').style.display = 'flex';
-    }
-
-    function addImageControl(url = '', width = 90) {
-      currentImages.push({ url, width });
-      renderImageControls();
-      updatePaper();
     }
 
     function uploadImageFromFile(e) {
@@ -617,7 +469,9 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = function(evt) {
-          addImageControl(evt.target.result, 100);
+          currentImages.push({ url: evt.target.result, width: 90 });
+          renderImageControls();
+          updatePaper();
         };
         reader.readAsDataURL(file);
       }
@@ -628,26 +482,29 @@
       container.innerHTML = '';
       currentImages.forEach((img, idx) => {
         const div = document.createElement('div');
-        div.className = 'img-item-control';
+        div.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
         div.innerHTML = `
-          <input type="text" class="form-control" placeholder="URL фото / base64" value="${img.url.startsWith('data:') ? '[Загруженный файл]' : img.url}" ${img.url.startsWith('data:') ? 'disabled' : ''} oninput="currentImages[${idx}].url=this.value; updatePaper();">
-          <input type="number" class="form-control" placeholder="px" value="${img.width}" oninput="currentImages[${idx}].width=this.value; updatePaper();">
-          <button style="background:none; border:none; color:#f87171; cursor:pointer; font-weight:bold;" onclick="currentImages.splice(${idx},1); renderImageControls(); updatePaper();">✕</button>
+          <input type="number" class="form-control" placeholder="Размер px" value="${img.width}" oninput="currentImages[${idx}].width=this.value; updatePaper();">
+          <button style="color:#f87171; background:none; border:none; cursor:pointer;" onclick="currentImages.splice(${idx},1); renderImageControls(); updatePaper();">✕</button>
         `;
         container.appendChild(div);
       });
     }
 
     function updatePaper() {
-      const paper = document.getElementById('paper-doc');
-      paper.style.fontFamily = document.getElementById('cfg-font').value;
-      paper.style.backgroundColor = document.getElementById('cfg-bg').value;
-
+      const doc = store.find(n => n.id === editingDocId);
+      if (doc && doc.font) {
+        document.getElementById('paper-doc').style.fontFamily = document.getElementById('cfg-font').value;
+      }
       document.getElementById('p-title-head').innerText = (document.getElementById('inp-title').value || 'ДОКУМЕНТ').toUpperCase();
       document.getElementById('p-code').innerText = document.getElementById('inp-code').value || 'УМВД-000';
       document.getElementById('p-intro').innerText = document.getElementById('inp-intro').value;
       document.getElementById('p-main').innerText = document.getElementById('inp-main').value;
-      document.getElementById('p-author').innerText = document.getElementById('inp-author').value || 'ФИО';
+      
+      // Авто-форматирование подписи
+      const rawAuthor = document.getElementById('inp-author').value;
+      document.getElementById('p-author').innerText = formatAuthorSignature(rawAuthor);
+
       document.getElementById('p-role').innerText = document.getElementById('inp-role').value || 'Должность';
       document.getElementById('p-date').innerText = document.getElementById('inp-date').value || '';
 
@@ -666,17 +523,13 @@
 
     function downloadPDF() {
       const element = document.getElementById('paper-doc');
-      const filename = (document.getElementById('inp-title').value || 'Документ') + '.pdf';
-      
-      const opt = {
-        margin:       12,
-        filename:     filename,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opt).from(element).save();
+      html2pdf().set({
+        margin: 10,
+        filename: (document.getElementById('inp-title').value || 'Документ') + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(element).save();
     }
 
     function closeEditor() {
@@ -689,16 +542,42 @@
         doc.author = document.getElementById('inp-author').value;
         doc.role = document.getElementById('inp-role').value;
         doc.date = document.getElementById('inp-date').value;
-
         doc.font = document.getElementById('cfg-font').value;
-        doc.bgColor = document.getElementById('cfg-bg').value;
         doc.images = currentImages;
 
-        saveState();
+        saveBoard();
         renderBoard();
       }
       document.getElementById('editor-modal').style.display = 'none';
     }
+
+    // Драг нод
+    let activeDragNode = null, dragOffset = { x: 0, y: 0 };
+    function startDrag(e, node) {
+      activeDragNode = node;
+      dragOffset.x = (e.clientX / scale) - node.x;
+      dragOffset.y = (e.clientY / scale) - node.y;
+      document.addEventListener('mousemove', onDrag);
+      document.addEventListener('mouseup', stopDrag);
+    }
+    function onDrag(e) {
+      if (!activeDragNode) return;
+      activeDragNode.x = (e.clientX / scale) - dragOffset.x;
+      activeDragNode.y = (e.clientY / scale) - dragOffset.y;
+      const el = document.querySelector(`[data-id="${activeDragNode.id}"]`);
+      if (el) { el.style.left = activeDragNode.x + 'px'; el.style.top = activeDragNode.y + 'px'; }
+      drawLines();
+    }
+    function stopDrag() {
+      if (!activeDragNode) return;
+      activeDragNode = null;
+      document.removeEventListener('mousemove', onDrag);
+      document.removeEventListener('mouseup', stopDrag);
+      saveBoard();
+    }
+
+    // Инициализация при старте
+    checkAuthStatus();
   </script>
 </body>
 </html>
