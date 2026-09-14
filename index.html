@@ -7,133 +7,138 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { background-color: #080a08; color: #e2e8f0; overflow: hidden; height: 100vh; width: 100vw; }
+    body { background-color: #121417; color: #e2e8f0; overflow: hidden; height: 100vh; width: 100vw; }
 
-    /* Точечный фон на весь экран */
-    #dots-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: radial-gradient(#223022 1.5px, transparent 1.5px); background-size: 28px 28px; }
+    #dots-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: radial-gradient(#2a2e35 1.5px, transparent 1.5px); background-size: 24px 24px; }
 
-    /* Форма Авторизации / Регистрации */
-    #auth-screen { position: fixed; inset: 0; background: rgba(5, 7, 5, 0.9); backdrop-filter: blur(14px); display: flex; align-items: center; justify-content: center; z-index: 5000; }
-    .auth-card { background: #111511; border: 1px solid #233023; padding: 32px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); width: 100%; max-width: 380px; }
-    .auth-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: #0a0d0a; padding: 4px; border-radius: 12px; border: 1px solid #1c261c; }
-    .auth-tab { flex: 1; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #8fa38f; cursor: pointer; transition: 0.2s; }
-    .auth-tab.active { background: #1c261c; color: #4ade80; }
-    .auth-card h1 { font-size: 1.3rem; margin-bottom: 16px; color: #fff; }
-    .auth-card input { width: 100%; background: #080a08; border: 1px solid #202b20; padding: 12px 14px; border-radius: 10px; color: #fff; margin-bottom: 12px; outline: none; }
-    .auth-card input:focus { border-color: #4ade80; }
+    /* Авторизация */
+    #auth-screen { position: fixed; inset: 0; background: rgba(15, 17, 21, 0.95); backdrop-filter: blur(14px); display: flex; align-items: center; justify-content: center; z-index: 5000; }
+    .auth-card { background: #1a1d24; border: 1px solid #2e3440; padding: 32px; border-radius: 16px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 380px; }
+    .auth-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: #121418; padding: 4px; border-radius: 10px; border: 1px solid #282d37; }
+    .auth-tab { flex: 1; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #9ab; cursor: pointer; transition: 0.2s; }
+    .auth-tab.active { background: #282d37; color: #fff; }
+    .auth-card input { width: 100%; background: #121418; border: 1px solid #282d37; padding: 12px; border-radius: 8px; color: #fff; margin-bottom: 12px; outline: none; }
+    
+    .btn-main { background: #3b82f6; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; }
+    .btn-main:hover { background: #2563eb; }
+    .btn-outline { background: #1a1d24; border: 1px solid #2e3440; color: #d1d5db; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn-outline:hover { background: #252a35; color: #fff; }
 
-    .btn-green { background: #4ade80; color: #062006; border: none; padding: 11px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; width: 100%; }
-    .btn-green:hover { background: #86efac; }
-    .btn-outline { background: transparent; border: 1px solid #2a382a; color: #d1d5db; padding: 9px 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: 600; }
-    .btn-outline:hover { background: #182218; border-color: #4ade80; color: #fff; }
-
-    /* Полотно доски */
+    /* Доска */
     #board-viewport { width: 100vw; height: 100vh; position: relative; cursor: grab; z-index: 1; }
     #board-viewport:active { cursor: grabbing; }
     #board-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0; }
     svg#connections-svg { position: absolute; inset: 0; width: 10000px; height: 10000px; pointer-events: none; z-index: 1; }
 
-    /* Верхняя Панель */
-    .top-bar { position: fixed; top: 16px; left: 16px; display: flex; gap: 10px; z-index: 100; align-items: center; background: rgba(13, 17, 13, 0.92); padding: 8px 14px; border-radius: 14px; border: 1px solid #233023; backdrop-filter: blur(10px); }
-    .btn-tool { background: #141a14; border: 1px solid #243224; color: #d1d5db; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-    .btn-tool:hover { background: #1f2a1f; color: #fff; border-color: #4ade80; }
+    /* Верхняя панель */
+    .top-bar { position: fixed; top: 16px; left: 16px; display: flex; gap: 10px; z-index: 100; align-items: center; background: rgba(22, 25, 32, 0.9); padding: 8px 14px; border-radius: 12px; border: 1px solid #2e3440; backdrop-filter: blur(10px); }
+    .btn-tool { background: #1a1d24; border: 1px solid #2e3440; color: #d1d5db; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+    .btn-tool:hover { background: #282d37; color: #fff; }
 
     /* Профиль */
     .profile-container { position: fixed; top: 16px; right: 16px; z-index: 100; }
-    .avatar-btn { width: 42px; height: 42px; border-radius: 50%; background: #4ade80; color: #062006; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #86efac; box-shadow: 0 4px 15px rgba(0,0,0,0.6); user-select: none; }
-    .profile-dropdown { position: absolute; right: 0; top: 52px; background: #111511; border: 1px solid #233023; border-radius: 14px; padding: 16px; width: 230px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-    .profile-info { border-bottom: 1px solid #202b20; padding-bottom: 10px; margin-bottom: 12px; }
-    .profile-info .name { font-weight: 700; color: #fff; }
-    .profile-info .role-badge { font-size: 0.75rem; color: #86efac; margin-top: 4px; display: inline-block; background: #172217; padding: 3px 9px; border-radius: 12px; }
+    .avatar-btn { width: 40px; height: 40px; border-radius: 50%; background: #3b82f6; color: #fff; font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #60a5fa; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .profile-dropdown { position: absolute; right: 0; top: 50px; background: #1a1d24; border: 1px solid #2e3440; border-radius: 12px; padding: 16px; width: 220px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
 
-    /* Узлы на доске */
-    .board-node { position: absolute; background: rgba(17, 22, 17, 0.95); border: 1px solid #253325; border-radius: 14px; padding: 14px 18px; min-width: 200px; cursor: grab; user-select: none; box-shadow: 0 10px 25px rgba(0,0,0,0.7); z-index: 2; transition: border-color 0.2s; }
-    .board-node:hover { border-color: #4ade80; }
-    .board-node.node-folder { border-left: 5px solid #3b82f6; }
-    .board-node.node-doc { border-left: 5px solid #4ade80; }
-    .board-node.is-yellow { border-color: #eab308 !important; background: rgba(42, 35, 10, 0.95); }
-    .node-type { font-size: 0.68rem; color: #8fa38f; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; }
-    .node-title { font-size: 0.92rem; font-weight: 600; color: #f3f4f6; }
-    .is-yellow .node-title { color: #fef08a; }
+    /* Карточки узлов */
+    .board-node { position: absolute; background: #1a1d24; border: 1px solid #2e3440; border-radius: 12px; padding: 12px 16px; min-width: 190px; cursor: grab; user-select: none; box-shadow: 0 8px 20px rgba(0,0,0,0.6); z-index: 2; transition: border-color 0.2s, background-color 0.2s; }
+    .board-node:hover { border-color: #60a5fa; }
+    .node-type { font-size: 0.65rem; color: #9ab; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; }
+    .node-title { font-size: 0.9rem; font-weight: 600; color: #f3f4f6; }
 
-    /* Контекстное меню ПКМ */
-    #context-menu { position: fixed; background: #121712; border: 1px solid #253325; border-radius: 12px; padding: 6px; min-width: 180px; display: none; z-index: 6000; box-shadow: 0 10px 25px rgba(0,0,0,0.9); }
-    .ctx-item { padding: 9px 12px; font-size: 0.85rem; color: #e2e8f0; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-    .ctx-item:hover { background: #1c261c; color: #86efac; }
-    .ctx-item.danger:hover { background: #381616; color: #f87171; }
+    /* ПКМ Меню */
+    #context-menu { position: fixed; background: #1a1d24; border: 1px solid #2e3440; border-radius: 10px; padding: 6px; min-width: 180px; display: none; z-index: 6000; box-shadow: 0 10px 25px rgba(0,0,0,0.9); }
+    .ctx-item { padding: 8px 12px; font-size: 0.85rem; color: #e2e8f0; border-radius: 6px; cursor: pointer; position: relative; display: flex; justify-content: space-between; align-items: center; }
+    .ctx-item:hover { background: #282d37; color: #fff; }
+    .ctx-item.danger:hover { background: #451a1a; color: #f87171; }
+
+    /* Подменю цветов */
+    .color-submenu { position: absolute; left: 100%; top: 0; background: #1a1d24; border: 1px solid #2e3440; border-radius: 10px; padding: 8px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; min-width: 140px; box-shadow: 0 10px 25px rgba(0,0,0,0.9); }
+    .ctx-item:hover .color-submenu { display: grid; }
+    .color-dot { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: transform 0.1s; }
+    .color-dot:hover { transform: scale(1.2); }
 
     /* Всплывающие окна */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 4000; }
-    .modal-box { background: #111511; border: 1px solid #233023; border-radius: 18px; padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9); }
-    .modal-box h3 { font-size: 1.1rem; color: #fff; margin-bottom: 14px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 4000; }
+    .modal-box { background: #1a1d24; border: 1px solid #2e3440; border-radius: 14px; padding: 20px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
 
-    /* Таблица Лидеров / Админки */
-    .custom-table { width: 100%; border-collapse: collapse; margin-top: 10px; color: #fff; font-size: 0.85rem; }
-    .custom-table th, .custom-table td { border: 1px solid #202b20; padding: 10px; text-align: left; }
-    .custom-table th { background: #161d16; color: #86efac; }
-
-    /* Редактор Документов */
-    #editor-modal { position: fixed; inset: 0; background: #080a08; display: none; z-index: 3500; flex-direction: column; }
-    .editor-header { height: 60px; background: #101410; border-bottom: 1px solid #1f2a1f; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+    /* Редактор Документа */
+    #editor-modal { position: fixed; inset: 0; background: #121417; display: none; z-index: 3500; flex-direction: column; }
+    .editor-header { height: 56px; background: #171a21; border-bottom: 1px solid #282d37; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
     .editor-body { flex: 1; display: flex; overflow: hidden; }
-    .editor-left { flex: 0 0 380px; padding: 24px; overflow-y: auto; background: #0d110d; border-right: 1px solid #1f2a1f; }
-    .editor-right { flex: 1; background: #121612; padding: 30px; display: flex; justify-content: center; overflow-y: auto; position: relative; }
+    .editor-left { flex: 0 0 420px; padding: 20px; overflow-y: auto; background: #171a21; border-right: 1px solid #282d37; }
+    .editor-right { flex: 1; background: #0f1115; padding: 30px; display: flex; justify-content: center; overflow-y: auto; }
 
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 0.78rem; color: #9ca3af; margin-bottom: 6px; font-weight: 500; }
-    .form-control { width: 100%; background: #141a14; border: 1px solid #222e22; border-radius: 10px; padding: 10px; color: #fff; font-size: 0.88rem; outline: none; }
-    .form-control:focus { border-color: #4ade80; }
-    textarea.form-control { resize: vertical; min-height: 80px; }
+    /* Панель форматирования (Скрин 1) */
+    .format-toolbar { display: flex; gap: 4px; background: #121418; border: 1px solid #282d37; padding: 4px; border-radius: 8px; margin-bottom: 8px; }
+    .fmt-btn { background: #1a1d24; border: 1px solid #2e3440; color: #d1d5db; min-width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; }
+    .fmt-btn:hover { background: #282d37; color: #fff; }
 
-    /* Печатный Бланк УМВД */
-    .paper-doc { width: 100%; max-width: 650px; background: #ffffff; color: #000; padding: 50px; border-radius: 2px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); position: relative; min-height: 900px; font-family: 'Times New Roman', serif; }
-    .doc-black-line { border-bottom: 2px solid #000; margin: 12px 0; }
-    .doc-yellow-highlight { background-color: #fef08a; padding: 2px 4px; border-radius: 3px; color: #854d0e; font-weight: bold; }
+    /* Кнопка "Добавить секцию" (Скрин 2) */
+    .add-section-dropdown { position: relative; margin: 12px 0; }
+    .btn-add-sec { background: transparent; border: 1px solid #282d37; color: #60a5fa; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .btn-add-sec:hover { background: #1a1d24; }
+    .sec-menu { position: absolute; top: 100%; left: 0; background: #1a1d24; border: 1px solid #2e3440; border-radius: 8px; padding: 4px; display: none; flex-direction: column; width: 160px; z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+    .sec-item { padding: 8px 12px; font-size: 0.85rem; color: #d1d5db; cursor: pointer; border-radius: 6px; }
+    .sec-item:hover { background: #282d37; color: #fff; }
+
+    .rich-editor { min-height: 120px; background: #121418; border: 1px solid #282d37; border-radius: 8px; padding: 10px; color: #fff; font-size: 0.9rem; outline: none; line-height: 1.5; }
+    .rich-editor:focus { border-color: #3b82f6; }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.75rem; color: #9ca3af; margin-bottom: 5px; font-weight: 600; }
+    .form-control { width: 100%; background: #121418; border: 1px solid #282d37; border-radius: 8px; padding: 10px; color: #fff; font-size: 0.85rem; outline: none; }
+
+    /* Бланк Документа */
+    .paper-doc { width: 100%; max-width: 650px; background: #ffffff; color: #000; padding: 45px; border-radius: 2px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); position: relative; min-height: 850px; font-family: 'Times New Roman', serif; }
+    .doc-line { border-bottom: 2px solid #000; margin: 10px 0; }
+    .highlight-yellow { background-color: #fef08a; padding: 1px 3px; border-radius: 2px; }
+    
+    /* Перетаскиваемые фото на бланке */
+    .draggable-img { position: absolute; cursor: move; border: 1px dashed transparent; user-select: none; }
+    .draggable-img:hover { border-color: #3b82f6; }
   </style>
 </head>
 <body>
 
   <div id="dots-bg"></div>
 
-  <!-- Окно Авторизации / Регистрации -->
+  <!-- Вход / Регистрация -->
   <div id="auth-screen">
     <div class="auth-card">
       <div class="auth-tabs">
         <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Вход</div>
         <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Регистрация</div>
       </div>
-      <h1 id="auth-title">Вход в систему</h1>
-      <input type="text" id="auth-username" placeholder="Логин (Никнейм)">
+      <h1 id="auth-title" style="font-size:1.2rem; margin-bottom:14px;">Вход в систему</h1>
+      <input type="text" id="auth-username" placeholder="Логин">
       <input type="password" id="auth-password" placeholder="Пароль">
-      <button class="btn-green" id="auth-submit-btn" onclick="submitAuth()">Войти</button>
+      <button class="btn-main" id="auth-submit-btn" onclick="submitAuth()">Войти</button>
     </div>
   </div>
 
-  <!-- Главное меню доски -->
+  <!-- Доска -->
   <div id="board-viewport">
     <div class="top-bar">
-      <div id="leader-tools" style="display:none; gap:10px;">
+      <div id="leader-tools" style="display:none; gap:8px;">
         <button class="btn-tool" onclick="openLeaderModal()">👑 Панель Лидеров</button>
         <button class="btn-tool" onclick="openCreateModal('folder')">+ Отдел</button>
         <button class="btn-tool" onclick="openCreateModal('doc')">+ Документ</button>
       </div>
-      <button class="btn-tool" onclick="resetZoom()">🎯 По центру</button>
-      <span id="linking-banner" style="display:none; color:#86efac; font-size:0.8rem; font-weight:600; padding-left:10px;">Выберите узел для соединения...</span>
+      <button class="btn-tool" onclick="resetZoom()">🎯 Сброс зума</button>
     </div>
 
-    <!-- Профиль справа -->
     <div class="profile-container">
       <div class="avatar-btn" id="avatar-btn" onclick="toggleProfileMenu()">U</div>
       <div class="profile-dropdown" id="profile-dropdown">
-        <div class="profile-info">
-          <div class="name" id="prof-name">Пользователь</div>
-          <div class="role-badge" id="prof-role">Обычный пользователь</div>
-          <div style="font-size: 0.72rem; color: #6b7280; margin-top: 5px;">UID: <span id="prof-uid">1</span></div>
+        <div style="border-bottom:1px solid #282d37; padding-bottom:8px; margin-bottom:10px;">
+          <div style="font-weight:700; color:#fff;" id="prof-name">Пользователь</div>
+          <div style="font-size:0.75rem; color:#60a5fa;" id="prof-role">Обычный пользователь</div>
         </div>
-        <button class="btn-tool" id="btn-admin-modal" style="width:100%; margin-bottom: 8px; display:none;" onclick="openAdminModal()">⚙️ Админ-панель</button>
+        <button class="btn-tool" id="btn-admin-modal" style="width:100%; margin-bottom:8px; display:none;" onclick="openAdminModal()">⚙️ Админ-панель</button>
         <button class="btn-tool" style="width:100%; color:#f87171;" onclick="logout()">Выйти</button>
       </div>
     </div>
@@ -143,145 +148,121 @@
     </div>
   </div>
 
-  <!-- Контекстное Меню ПКМ -->
+  <!-- ПКМ Меню c подменю цветов (Скрин 3) -->
   <div id="context-menu">
-    <div class="ctx-item" onclick="startLinkingProcess()">🔗 Соединить с...</div>
-    <div class="ctx-item" onclick="toggleYellowHighlight()">🟨 Выделить (Шаблон)</div>
+    <div class="ctx-item" onclick="startLinkingProcess()">🔗 Соединить</div>
+    <div class="ctx-item" id="leader-color-menu" style="display:none;">
+      <span>🎨 Выбрать цвет</span> <span>❯</span>
+      <div class="color-submenu" id="color-palette"></div>
+    </div>
     <div class="ctx-item" onclick="renameNodePrompt()">✏️ Переименовать</div>
-    <div class="ctx-item danger" id="ctx-delete-node" onclick="deleteNodeAction()">🗑️ Удалить</div>
+    <div class="ctx-item danger" onclick="deleteNodeAction()">🗑️ Удалить</div>
   </div>
 
-  <!-- Модалка создания элементов -->
+  <!-- Окно создания -->
   <div class="modal-overlay" id="create-modal">
     <div class="modal-box">
-      <h3 id="create-modal-title">Создать узел</h3>
+      <h3 id="create-modal-title" style="margin-bottom:12px;">Создать</h3>
       <div class="form-group">
         <label>Название</label>
-        <input type="text" id="create-node-name" class="form-control" placeholder="Введите название...">
+        <input type="text" id="create-node-name" class="form-control">
       </div>
-      <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
         <button class="btn-outline" onclick="closeCreateModal()">Отмена</button>
-        <button class="btn-green" style="width:auto;" onclick="submitCreateNode()">Создать</button>
+        <button class="btn-main" style="width:auto;" onclick="submitCreateNode()">Создать</button>
       </div>
     </div>
   </div>
 
   <!-- Панель Лидеров -->
   <div class="modal-overlay" id="leader-modal">
-    <div class="modal-box" style="max-width: 560px;">
-      <h3>👑 Панель Управления Бланками</h3>
-      <p style="font-size:0.8rem; color:#9ca3af; margin-bottom:12px;">Выберите документ из списка для настройки шаблона и желтых подсветок:</p>
-      <div style="max-height: 260px; overflow-y: auto;">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Тип</th>
-              <th>Название</th>
-              <th>Действие</th>
-            </tr>
-          </thead>
+    <div class="modal-box" style="max-width: 500px;">
+      <h3 style="margin-bottom:10px;">👑 Бланки Лидера</h3>
+      <div style="max-height: 250px; overflow-y: auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; color:#fff;">
           <tbody id="leader-docs-list"></tbody>
         </table>
       </div>
-      <div style="margin-top: 18px; text-align: right;">
+      <div style="margin-top:14px; text-align:right;">
         <button class="btn-outline" onclick="document.getElementById('leader-modal').style.display='none'">Закрыть</button>
       </div>
     </div>
   </div>
 
-  <!-- Админ-Панель -->
-  <div class="modal-overlay" id="admin-modal">
-    <div class="modal-box" style="max-width: 520px;">
-      <h3>⚙️ Администрирование</h3>
-      <div style="max-height: 280px; overflow-y: auto;">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>UID</th>
-              <th>Никнейм</th>
-              <th>Статус</th>
-              <th>Действие</th>
-            </tr>
-          </thead>
-          <tbody id="admin-users-list"></tbody>
-        </table>
-      </div>
-      <div style="margin-top: 18px; text-align: right;">
-        <button class="btn-outline" onclick="document.getElementById('admin-modal').style.display='none'">Закрыть</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Редактор Документа -->
+  <!-- Редактор Документов -->
   <div id="editor-modal">
     <div class="editor-header">
-      <span id="ed-breadcrumb" style="color:#86efac; font-weight:600;">Документ</span>
+      <span id="ed-breadcrumb" style="color:#60a5fa; font-weight:600;">Документ</span>
       <div style="display:flex; gap:10px;">
-        <button class="btn-tool" style="background:#2563eb; color:#fff;" onclick="downloadPDF()">📥 Скачать PDF</button>
-        <button class="btn-outline" style="color:#f87171; border-color:#381616;" onclick="closeEditorWithoutSaving()">✕ Закрыть (без сохранения)</button>
+        <button class="btn-main" onclick="downloadPNG()">🖼️ Скачать PNG</button>
+        <button class="btn-outline" style="color:#f87171;" onclick="closeEditorWithoutSaving()">✕ Закрыть</button>
       </div>
     </div>
     <div class="editor-body">
       <div class="editor-left">
-        <div id="leader-editor-controls" style="display:none; background:#141d14; border:1px dashed #4ade80; padding:12px; border-radius:12px; margin-bottom:16px;">
-          <h4 style="font-size:0.8rem; color:#86efac; margin-bottom:8px;">👑 Настройки шаблона</h4>
-          <div class="form-group">
-            <label>Добавить фото (Печать/Герб)</label>
-            <input type="file" accept="image/*" class="form-control" onchange="uploadImageFromFile(event)">
-          </div>
-          <div id="images-list"></div>
+        <div id="leader-img-upload" style="display:none; margin-bottom:12px;">
+          <label style="font-size:0.75rem; color:#9ca3af;">Загрузить фото/печать (можно двигать на бланке)</label>
+          <input type="file" accept="image/*" class="form-control" onchange="uploadImageFromFile(event)">
         </div>
 
         <div class="form-group">
           <label>Заголовок документа</label>
           <input type="text" id="inp-title" class="form-control" oninput="updatePaper()">
         </div>
+
+        <!-- Кнопка "Добавить секцию" (Скрин 2) -->
+        <div class="add-section-dropdown">
+          <button class="btn-add-sec" onclick="toggleSecMenu()">⇧ Добавить секцию ▾</button>
+          <div class="sec-menu" id="sec-menu">
+            <div class="sec-item" onclick="insertSection('установил:')">установил:</div>
+            <div class="sec-item" onclick="insertSection('решил:')">решил:</div>
+            <div class="sec-item" onclick="insertSection('определил:')">определил:</div>
+          </div>
+        </div>
+
+        <!-- Панель Форматирования (Скрин 1) -->
         <div class="form-group">
-          <label>Код / Номер</label>
+          <label>Текст документа</label>
+          <div class="format-toolbar">
+            <button class="fmt-btn" onclick="execCmd('bold')">B</button>
+            <button class="fmt-btn" onclick="execCmd('italic')"><i>I</i></button>
+            <button class="fmt-btn" onclick="execCmd('underline')"><u>U</u></button>
+            <button class="fmt-btn" style="background:#fef08a; color:#854d0e;" title="Выделить желтым" onclick="highlightSelection()">🖌️</button>
+          </div>
+          <div id="inp-rich-body" class="rich-editor" contenteditable="true" oninput="updatePaper()"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Код документа</label>
           <input type="text" id="inp-code" class="form-control" oninput="updatePaper()">
         </div>
         <div class="form-group">
-          <label>Преамбула (Текст до сути)</label>
-          <textarea id="inp-intro" class="form-control" oninput="updatePaper()"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Основной текст</label>
-          <textarea id="inp-main" class="form-control" style="min-height: 100px;" oninput="updatePaper()"></textarea>
-        </div>
-        <div class="form-group">
-          <label>ФИО Составителя (Для автоподписи)</label>
-          <input type="text" id="inp-author" placeholder="Павел Аграбейко" class="form-control" oninput="updatePaper()">
+          <label>ФИО Составителя</label>
+          <input type="text" id="inp-author" class="form-control" placeholder="Павел Аграбейко" oninput="updatePaper()">
         </div>
         <div class="form-group">
           <label>Должность</label>
           <input type="text" id="inp-role" class="form-control" oninput="updatePaper()">
         </div>
-        <div class="form-group">
-          <label>Дата</label>
-          <input type="text" id="inp-date" class="form-control" oninput="updatePaper()">
-        </div>
 
-        <button class="btn-green" onclick="saveEditorData()">💾 Сохранить изменения</button>
+        <button class="btn-main" style="margin-top:10px;" onclick="saveEditorData()">💾 Сохранить</button>
       </div>
 
       <div class="editor-right">
-        <!-- Бланк Документа -->
         <div class="paper-doc" id="paper-doc">
           <div style="text-align: center; font-size: 11pt; font-weight: bold; text-transform: uppercase;">
             Управление Министерства Внутренних Дел<br>по Ленинградской области<br>
             <small id="p-code" style="font-weight: normal; font-size: 9pt;">УМВД-RES-001</small>
           </div>
 
-          <div id="p-images-box" style="display: flex; justify-content: center; gap: 15px; margin: 12px 0;"></div>
-          <div class="doc-black-line"></div>
+          <div class="doc-line"></div>
 
           <div style="font-size: 11pt; line-height: 1.5;">
             <h3 id="p-title-head" style="font-size: 13pt; margin: 15px 0; text-align: center; text-transform: uppercase;">ПОСТАНОВЛЕНИЕ</h3>
-            <p id="p-intro" style="margin-bottom: 12px; text-align: justify;"></p>
-            <p id="p-main" style="white-space: pre-line; text-align: justify;"></p>
+            <div id="p-body-content" style="white-space: pre-line; text-align: justify;"></div>
           </div>
 
-          <div style="margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10pt;">
+          <div style="margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10pt;">
             <div>
               <strong id="p-role">Начальник УМВД</strong><br>
               <span id="p-author" style="font-size:11pt; font-weight:bold;">П. Аграбейко</span>
@@ -290,49 +271,52 @@
               <span id="p-date">14.09.2026</span>
             </div>
           </div>
+
+          <!-- Контейнер для перетаскиваемых картинок -->
+          <div id="images-container"></div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    let currentUser = null;
-    let store = [];
-    let currentAuthMode = 'login';
+    let currentUser = null, store = [], currentAuthMode = 'login';
     let scale = 0.8, panX = window.innerWidth / 5, panY = window.innerHeight / 5;
-    let editingDocId = null;
-    let currentImages = [];
+    let editingDocId = null, currentImages = [];
+    let selectedNodeForCtx = null, linkingSourceNode = null, targetCreateType = 'folder';
 
-    let targetCreateType = 'folder';
-    let selectedNodeForCtx = null;
-    let linkingSourceNode = null;
+    const colors = ['#1a1d24', '#1e3a8a', '#065f46', '#991b1b', '#854d0e', '#5b21b6', '#831843', '#134e4a', '#312e81', '#3f6212'];
 
-    const viewport = document.getElementById('board-viewport');
     const board = document.getElementById('board-container');
     const svg = document.getElementById('connections-svg');
     const contextMenu = document.getElementById('context-menu');
 
-    // Авторизация / Регистрация
+    // Настройка 10 цветов ПКМ
+    const palette = document.getElementById('color-palette');
+    colors.forEach(c => {
+      const dot = document.createElement('div');
+      dot.className = 'color-dot';
+      dot.style.backgroundColor = c;
+      dot.onclick = () => setNodeColor(c);
+      palette.appendChild(dot);
+    });
+
     function switchAuthTab(mode) {
       currentAuthMode = mode;
       document.getElementById('tab-login').classList.toggle('active', mode === 'login');
       document.getElementById('tab-register').classList.toggle('active', mode === 'register');
-      document.getElementById('auth-title').innerText = mode === 'login' ? 'Вход в систему' : 'Регистрация';
       document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Войти' : 'Зарегистрироваться';
     }
 
     async function submitAuth() {
       const username = document.getElementById('auth-username').value;
       const password = document.getElementById('auth-password').value;
-      const url = currentAuthMode === 'login' ? '/api/login' : '/api/register';
-
-      const res = await fetch(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+      const res = await fetch(currentAuthMode === 'login' ? '/api/login' : '/api/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password })
       });
       const data = await res.json();
       if (data.success) checkAuthStatus();
-      else alert(data.error || 'Ошибка входа');
+      else alert(data.error || 'Ошибка');
     }
 
     async function checkAuthStatus() {
@@ -343,102 +327,63 @@
         document.getElementById('auth-screen').style.display = 'none';
         setupProfileUI();
         loadBoard();
-      } else {
-        document.getElementById('auth-screen').style.display = 'flex';
       }
-    }
-
-    async function logout() {
-      await fetch('/api/logout', { method: 'POST' });
-      location.reload();
     }
 
     function setupProfileUI() {
       document.getElementById('avatar-btn').innerText = currentUser.username.charAt(0).toUpperCase();
       document.getElementById('prof-name').innerText = currentUser.username;
-      document.getElementById('prof-uid').innerText = currentUser.id;
-
-      let roleText = 'Обычный пользователь';
-      if (currentUser.role === 'ADMIN') roleText = 'Администратор';
-      else if (currentUser.is_leader) roleText = 'Лидер';
-      
-      document.getElementById('prof-role').innerText = roleText;
+      document.getElementById('prof-role').innerText = currentUser.role === 'ADMIN' ? 'Администратор' : (currentUser.is_leader ? 'Лидер' : 'Пользователь');
 
       if (currentUser.is_leader || currentUser.role === 'ADMIN') {
         document.getElementById('leader-tools').style.display = 'flex';
-        document.getElementById('leader-editor-controls').style.display = 'block';
-      }
-
-      if (currentUser.role === 'ADMIN') {
-        document.getElementById('btn-admin-modal').style.display = 'block';
+        document.getElementById('leader-color-menu').style.display = 'flex';
+        document.getElementById('leader-img-upload').style.display = 'block';
       }
     }
 
-    function toggleProfileMenu() {
-      const el = document.getElementById('profile-dropdown');
-      el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    }
-
-    // Загрузка Доски
     async function loadBoard() {
       const res = await fetch('/api/board');
       store = await res.json();
-      updateTransform();
-      renderBoard();
+      updateTransform(); renderBoard();
     }
 
     async function saveBoard() {
       if (!currentUser.is_leader && currentUser.role !== 'ADMIN') return;
-      await fetch('/api/board', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nodes: store })
-      });
+      await fetch('/api/board', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nodes: store }) });
     }
 
     function renderBoard() {
       document.querySelectorAll('.board-node').forEach(el => el.remove());
-
       store.forEach(node => {
         const div = document.createElement('div');
-        const isDoc = node.type === 'doc';
-        div.className = `board-node ${isDoc ? 'node-doc' : 'node-folder'} ${node.isYellow ? 'is-yellow' : ''}`;
+        div.className = 'board-node';
         div.style.left = node.x + 'px';
         div.style.top = node.y + 'px';
+        if (node.bgColor) div.style.backgroundColor = node.bgColor;
 
-        div.innerHTML = `
-          <div class="node-type">${isDoc ? '📄 Документ' : '📁 Отдел'}</div>
-          <div class="node-title">${node.title}</div>
-        `;
+        div.innerHTML = `<div class="node-type">${node.type === 'doc' ? '📄 Документ' : '📁 Отдел'}</div><div class="node-title">${node.title}</div>`;
 
         div.addEventListener('contextmenu', (e) => {
           e.preventDefault(); e.stopPropagation();
           selectedNodeForCtx = node;
-          contextMenu.style.left = e.clientX + 'px';
-          contextMenu.style.top = e.clientY + 'px';
+          contextMenu.style.left = e.clientX + 'px'; contextMenu.style.top = e.clientY + 'px';
           contextMenu.style.display = 'block';
         });
 
         div.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (linkingSourceNode) {
-            if (linkingSourceNode.id !== node.id) {
-              node.parentId = linkingSourceNode.id;
-              saveBoard(); renderBoard();
-            }
-            linkingSourceNode = null;
-            document.getElementById('linking-banner').style.display = 'none';
-            return;
+          if (linkingSourceNode && linkingSourceNode.id !== node.id) {
+            node.parentId = linkingSourceNode.id; saveBoard(); renderBoard(); linkingSourceNode = null; return;
           }
-          if (isDoc) openEditor(node.id);
+          if (node.type === 'doc') openEditor(node.id);
         });
 
         if (currentUser.is_leader || currentUser.role === 'ADMIN') {
           div.addEventListener('mousedown', (e) => { if (e.button === 0) startDragNode(e, node); });
         }
-
         board.appendChild(div);
       });
-
       drawLines();
     }
 
@@ -446,228 +391,119 @@
       svg.innerHTML = '';
       store.forEach(node => {
         if (node.parentId) {
-          const parent = store.find(n => n.id === node.parentId);
-          if (parent) {
+          const p = store.find(n => n.id === node.parentId);
+          if (p) {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            const x1 = parent.x + 100, y1 = parent.y + 35, x2 = node.x + 100, y2 = node.y + 35;
-            const dx = Math.abs(x2 - x1) / 2;
-            path.setAttribute('d', `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
-            path.setAttribute('stroke', '#4ade80'); path.setAttribute('stroke-width', '2.5'); path.setAttribute('fill', 'none');
+            const x1 = p.x + 90, y1 = p.y + 30, x2 = node.x + 90, y2 = node.y + 30;
+            path.setAttribute('d', `M ${x1} ${y1} C ${x1 + 40} ${y1}, ${x2 - 40} ${y2}, ${x2} ${y2}`);
+            path.setAttribute('stroke', '#4b5563'); path.setAttribute('stroke-width', '2'); path.setAttribute('fill', 'none');
             svg.appendChild(path);
           }
         }
       });
     }
 
-    // Выделение Желтым для Лидеров
-    function toggleYellowHighlight() {
-      contextMenu.style.display = 'none';
-      if (!selectedNodeForCtx) return;
-      selectedNodeForCtx.isYellow = !selectedNodeForCtx.isYellow;
-      saveBoard();
-      renderBoard();
-    }
-
-    function startLinkingProcess() {
-      contextMenu.style.display = 'none';
-      if (!selectedNodeForCtx) return;
-      linkingSourceNode = selectedNodeForCtx;
-      document.getElementById('linking-banner').style.display = 'inline';
-    }
-
-    function openCreateModal(type) {
-      targetCreateType = type;
-      document.getElementById('create-modal-title').innerText = type === 'doc' ? 'Создать Документ' : 'Создать Отдел';
-      document.getElementById('create-node-name').value = '';
-      document.getElementById('create-modal').style.display = 'flex';
-    }
-
-    function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
-
-    function submitCreateNode() {
-      const title = document.getElementById('create-node-name').value;
-      if (title) {
-        store.push({
-          id: Date.now().toString(), type: targetCreateType, title,
-          x: (-panX + window.innerWidth / 2) / scale,
-          y: (-panY + window.innerHeight / 2) / scale,
-          code: 'УМВД-00' + (store.length + 1),
-          intro: '[Укажите основание документа]', main: '[Введите решение или текст постановления]',
-          author: '', role: '[Укажите должность]', date: new Date().toLocaleDateString(),
-          images: []
-        });
+    function setNodeColor(color) {
+      if (selectedNodeForCtx) {
+        selectedNodeForCtx.bgColor = color;
         saveBoard(); renderBoard();
       }
-      closeCreateModal();
     }
 
-    function renameNodePrompt() {
-      contextMenu.style.display = 'none';
-      if (!selectedNodeForCtx) return;
-      const newTitle = prompt('Новое название:', selectedNodeForCtx.title);
-      if (newTitle) { selectedNodeForCtx.title = newTitle; saveBoard(); renderBoard(); }
+    /* Форматирование (Скрин 1) */
+    function execCmd(cmd) { document.execCommand(cmd, false, null); updatePaper(); }
+    function highlightSelection() {
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        const span = document.createElement('span');
+        span.className = 'highlight-yellow';
+        range.surroundContents(span);
+        updatePaper();
+      }
     }
 
-    function deleteNodeAction() {
-      contextMenu.style.display = 'none';
-      if (!selectedNodeForCtx) return;
-      store = store.filter(n => n.id !== selectedNodeForCtx.id && n.parentId !== selectedNodeForCtx.id);
-      saveBoard(); renderBoard();
+    /* Секции (Скрин 2) */
+    function toggleSecMenu() {
+      const m = document.getElementById('sec-menu');
+      m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+    }
+    function insertSection(text) {
+      const ed = document.getElementById('inp-rich-body');
+      ed.innerHTML += `<br><strong>${text}</strong><br>`;
+      document.getElementById('sec-menu').style.display = 'none';
+      updatePaper();
     }
 
-    function updateTransform() { board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
-    function resetZoom() { scale = 0.8; panX = window.innerWidth / 5; panY = window.innerHeight / 5; updateTransform(); }
+    /* Перетаскивание картинок лидером */
+    function uploadImageFromFile(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const r = new FileReader();
+        r.onload = (evt) => {
+          currentImages.push({ url: evt.target.result, x: 200, y: 150 });
+          renderDraggableImages();
+        };
+        r.readAsDataURL(file);
+      }
+    }
 
-    viewport.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      scale = e.deltaY < 0 ? Math.min(scale * 1.08, 2.0) : Math.max(scale / 1.08, 0.3);
-      updateTransform();
-    }, { passive: false });
+    function renderDraggableImages() {
+      const container = document.getElementById('images-container');
+      container.innerHTML = '';
+      currentImages.forEach((img, i) => {
+        const imageEl = document.createElement('img');
+        imageEl.src = img.url;
+        imageEl.className = 'draggable-img';
+        imageEl.style.left = img.x + 'px';
+        imageEl.style.top = img.y + 'px';
+        imageEl.style.width = '100px';
 
-    window.addEventListener('click', () => { contextMenu.style.display = 'none'; });
-
-    // Панель Лидера
-    function openLeaderModal() {
-      const list = document.getElementById('leader-docs-list');
-      list.innerHTML = '';
-
-      store.filter(n => n.type === 'doc').forEach(doc => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>📄 Документ</td>
-          <td>${doc.title}</td>
-          <td><button class="btn-tool" onclick="document.getElementById('leader-modal').style.display='none'; openEditor('${doc.id}')">Изменить</button></td>
-        `;
-        list.appendChild(tr);
+        if (currentUser.is_leader || currentUser.role === 'ADMIN') {
+          imageEl.onmousedown = (e) => {
+            let shiftX = e.clientX - imageEl.getBoundingClientRect().left;
+            let shiftY = e.clientY - imageEl.getBoundingClientRect().top;
+            function moveAt(pageX, pageY) {
+              const rect = document.getElementById('paper-doc').getBoundingClientRect();
+              img.x = pageX - rect.left - shiftX;
+              img.y = pageY - rect.top - shiftY;
+              imageEl.style.left = img.x + 'px'; imageEl.style.top = img.y + 'px';
+            }
+            function onMouseMove(e) { moveAt(e.pageX, e.pageY); }
+            document.addEventListener('mousemove', onMouseMove);
+            document.onmouseup = () => { document.removeEventListener('mousemove', onMouseMove); document.onmouseup = null; };
+          };
+        }
+        container.appendChild(imageEl);
       });
-
-      document.getElementById('leader-modal').style.display = 'flex';
     }
 
-    // Панель Админа
-    async function openAdminModal() {
-      const res = await fetch('/api/admin/users');
-      const users = await res.json();
-      const list = document.getElementById('admin-users-list');
-      list.innerHTML = '';
-
-      users.forEach(u => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${u.id}</td>
-          <td>${u.username}</td>
-          <td>${u.is_leader ? '👑 Лидер' : 'Пользователь'}</td>
-          <td>
-            <button class="btn-tool" onclick="toggleLeader(${u.id}, ${!u.is_leader})">
-              ${u.is_leader ? 'Снять Лидера' : 'Выдать Лидера'}
-            </button>
-          </td>
-        `;
-        list.appendChild(tr);
-      });
-
-      document.getElementById('admin-modal').style.display = 'flex';
-    }
-
-    async function toggleLeader(userId, isLeader) {
-      await fetch('/api/admin/toggle-leader', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, isLeader })
-      });
-      openAdminModal();
-    }
-
-    // Автоподпись (Павел Аграбейко -> П. Аграбейко)
-    function autoFormatSignature(nameStr) {
-      if (!nameStr) return 'П. Аграбейко';
-      const parts = nameStr.trim().split(/\s+/);
-      if (parts.length >= 2) return `${parts[0].charAt(0).toUpperCase()}. ${parts[1]}`;
-      return nameStr;
-    }
-
-    // Редактирование документа
     function openEditor(id) {
       const doc = store.find(n => n.id === id);
       if (!doc) return;
       editingDocId = id;
-      currentImages = doc.images ? [...doc.images] : [];
+      currentImages = doc.images || [];
 
-      document.getElementById('ed-breadcrumb').innerText = `УМВД > ${doc.title}`;
       document.getElementById('inp-title').value = doc.title || '';
       document.getElementById('inp-code').value = doc.code || '';
-      document.getElementById('inp-intro').value = doc.intro || '';
-      document.getElementById('inp-main').value = doc.main || '';
+      document.getElementById('inp-rich-body').innerHTML = doc.bodyHtml || '';
       document.getElementById('inp-author').value = doc.author || '';
       document.getElementById('inp-role').value = doc.role || '';
-      document.getElementById('inp-date').value = doc.date || '';
 
-      renderImageControls();
+      renderDraggableImages();
       updatePaper();
       document.getElementById('editor-modal').style.display = 'flex';
-    }
-
-    function uploadImageFromFile(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          currentImages.push({ url: evt.target.result, width: 80 });
-          renderImageControls();
-          updatePaper();
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    function renderImageControls() {
-      const container = document.getElementById('images-list');
-      container.innerHTML = '';
-      currentImages.forEach((img, idx) => {
-        const div = document.createElement('div');
-        div.style.cssText = 'display:flex; gap:6px; margin-top:6px; align-items:center;';
-        div.innerHTML = `
-          <input type="number" class="form-control" style="width:80px;" value="${img.width}" oninput="currentImages[${idx}].width=this.value; updatePaper();">
-          <span style="font-size:0.75rem; color:#aaa;">px</span>
-          <button style="color:#f87171; background:none; border:none; cursor:pointer;" onclick="currentImages.splice(${idx},1); renderImageControls(); updatePaper();">✕</button>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function formatYellowText(text) {
-      if (!text) return '';
-      return text.replace(/\[(.*?)\]/g, '<span class="doc-yellow-highlight">[$1]</span>');
     }
 
     function updatePaper() {
       document.getElementById('p-title-head').innerText = (document.getElementById('inp-title').value || 'ДОКУМЕНТ').toUpperCase();
       document.getElementById('p-code').innerText = document.getElementById('inp-code').value || 'УМВД-000';
-      
-      document.getElementById('p-intro').innerHTML = formatYellowText(document.getElementById('inp-intro').value);
-      document.getElementById('p-main').innerHTML = formatYellowText(document.getElementById('inp-main').value);
+      document.getElementById('p-body-content').innerHTML = document.getElementById('inp-rich-body').innerHTML;
       
       const rawAuthor = document.getElementById('inp-author').value;
-      document.getElementById('p-author').innerText = autoFormatSignature(rawAuthor);
-
+      const parts = rawAuthor.trim().split(/\s+/);
+      document.getElementById('p-author').innerText = parts.length >= 2 ? `${parts[0].charAt(0).toUpperCase()}. ${parts[1]}` : (rawAuthor || 'П. Аграбейко');
       document.getElementById('p-role').innerText = document.getElementById('inp-role').value || 'Должность';
-      document.getElementById('p-date').innerText = document.getElementById('inp-date').value || '';
-
-      const imgBox = document.getElementById('p-images-box');
-      imgBox.innerHTML = '';
-      currentImages.forEach(img => {
-        if (img.url) {
-          const imageEl = document.createElement('img');
-          imageEl.src = img.url;
-          imageEl.style.width = (img.width || 80) + 'px';
-          imageEl.style.objectFit = 'contain';
-          imgBox.appendChild(imageEl);
-        }
-      });
-    }
-
-    function closeEditorWithoutSaving() {
-      document.getElementById('editor-modal').style.display = 'none';
-      loadBoard();
     }
 
     function saveEditorData() {
@@ -675,53 +511,73 @@
       if (doc) {
         doc.title = document.getElementById('inp-title').value;
         doc.code = document.getElementById('inp-code').value;
-        doc.intro = document.getElementById('inp-intro').value;
-        doc.main = document.getElementById('inp-main').value;
+        doc.bodyHtml = document.getElementById('inp-rich-body').innerHTML;
         doc.author = document.getElementById('inp-author').value;
         doc.role = document.getElementById('inp-role').value;
-        doc.date = document.getElementById('inp-date').value;
         doc.images = currentImages;
-
-        saveBoard();
-        renderBoard();
-        alert('Сохранено!');
+        saveBoard(); renderBoard(); alert('Сохранено!');
       }
     }
 
-    function downloadPDF() {
-      const element = document.getElementById('paper-doc');
-      html2pdf().set({
-        margin: 5,
-        filename: (document.getElementById('inp-title').value || 'Документ') + '.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      }).from(element).save();
+    /* Скачивание PNG */
+    function downloadPNG() {
+      const paper = document.getElementById('paper-doc');
+      html2canvas(paper, { scale: 2 }).then(canvas => {
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = (document.getElementById('inp-title').value || 'Документ') + '.png';
+        a.click();
+      });
     }
 
-    // Драг карточек
+    function updateTransform() { board.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
+    function resetZoom() { scale = 0.8; panX = window.innerWidth / 5; panY = window.innerHeight / 5; updateTransform(); }
+
+    function openCreateModal(t) { targetCreateType = t; document.getElementById('create-modal').style.display = 'flex'; }
+    function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
+    function submitCreateNode() {
+      const title = document.getElementById('create-node-name').value;
+      if (title) {
+        store.push({ id: Date.now().toString(), type: targetCreateType, title, x: 200, y: 200, bodyHtml: '' });
+        saveBoard(); renderBoard();
+      }
+      closeCreateModal();
+    }
+
+    function startLinkingProcess() { contextMenu.style.display = 'none'; linkingSourceNode = selectedNodeForCtx; }
+    function renameNodePrompt() {
+      contextMenu.style.display = 'none';
+      const t = prompt('Новое имя:', selectedNodeForCtx.title);
+      if (t) { selectedNodeForCtx.title = t; saveBoard(); renderBoard(); }
+    }
+    function deleteNodeAction() {
+      contextMenu.style.display = 'none';
+      store = store.filter(n => n.id !== selectedNodeForCtx.id);
+      saveBoard(); renderBoard();
+    }
+
     let activeDragNode = null, dragOffset = { x: 0, y: 0 };
     function startDragNode(e, node) {
       activeDragNode = node;
-      dragOffset.x = (e.clientX / scale) - node.x;
-      dragOffset.y = (e.clientY / scale) - node.y;
-      document.addEventListener('mousemove', onDragNode);
-      document.addEventListener('mouseup', stopDragNode);
+      dragOffset.x = (e.clientX / scale) - node.x; dragOffset.y = (e.clientY / scale) - node.y;
+      document.addEventListener('mousemove', onDragNode); document.addEventListener('mouseup', stopDragNode);
     }
     function onDragNode(e) {
       if (!activeDragNode) return;
-      activeDragNode.x = (e.clientX / scale) - dragOffset.x;
-      activeDragNode.y = (e.clientY / scale) - dragOffset.y;
+      activeDragNode.x = (e.clientX / scale) - dragOffset.x; activeDragNode.y = (e.clientY / scale) - dragOffset.y;
       renderBoard();
     }
     function stopDragNode() {
-      if (!activeDragNode) return;
       activeDragNode = null;
-      document.removeEventListener('mousemove', onDragNode);
-      document.removeEventListener('mouseup', stopDragNode);
+      document.removeEventListener('mousemove', onDragNode); document.removeEventListener('mouseup', stopDragNode);
       saveBoard();
     }
 
+    function toggleProfileMenu() { const p = document.getElementById('profile-dropdown'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
+    function closeEditorWithoutSaving() { document.getElementById('editor-modal').style.display = 'none'; }
+    async function logout() { await fetch('/api/logout', { method: 'POST' }); location.reload(); }
+
+    window.onclick = () => { contextMenu.style.display = 'none'; };
     checkAuthStatus();
   </script>
 </body>
