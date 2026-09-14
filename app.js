@@ -5,6 +5,9 @@ let currentEditingDoc = null;
 let currentCreateType = 'folder';
 let selectedNodeId = null;
 
+let isConnecting = false;
+let connectingSourceId = null;
+
 let isDragging = false;
 let dragNodeId = null;
 let dragOffsetX = 0;
@@ -13,7 +16,18 @@ let dragOffsetY = 0;
 window.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   
-  document.addEventListener('click', () => {
+  document.addEventListener('click', (e) => {
+    if (isConnecting) {
+      const card = e.target.closest('.board-card');
+      if (card) {
+        const targetId = card.id.replace('node-', '');
+        if (targetId !== connectingSourceId) {
+          finishConnecting(targetId);
+        }
+      }
+      return;
+    }
+
     const menu = document.getElementById('context-menu');
     if (menu) menu.style.display = 'none';
   });
@@ -116,9 +130,8 @@ function renderBoard() {
       ${node.code ? `<div style="font-size:0.75rem; color:#60a5fa; margin-top:4px;">${node.code}</div>` : ''}
     `;
 
-    // Перетаскивать могут только Лидер и Админ
     card.onmousedown = (e) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || isConnecting) return;
       if (isLeaderOrAdmin) {
         isDragging = true;
         dragNodeId = node.id;
@@ -130,14 +143,14 @@ function renderBoard() {
 
     card.onclick = (e) => {
       e.stopPropagation();
+      if (isConnecting) return;
       if (node.type === 'doc') openEditor(node);
     };
 
-    // Контекстное меню ПКМ (только для Лидера / Админа)
     card.oncontextmenu = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!isLeaderOrAdmin) return;
+      if (!isLeaderOrAdmin || isConnecting) return;
 
       selectedNodeId = node.id;
       const menu = document.getElementById('context-menu');
@@ -171,7 +184,6 @@ async function handleMouseUp() {
   }
 }
 
-// Отрисовка зеленых пунктирных линий (как на скрине)
 function renderConnections() {
   const svg = document.getElementById('connections-svg');
   if (!svg) return;
@@ -194,15 +206,20 @@ function renderConnections() {
           const x2 = childRect.left + childRect.width / 2 - boardRect.left;
           const y2 = childRect.top + childRect.height / 2 - boardRect.top;
 
-          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          line.setAttribute('x1', x1);
-          line.setAttribute('y1', y1);
-          line.setAttribute('x2', x2);
-          line.setAttribute('y2', y2);
-          line.setAttribute('stroke', '#065f46'); // Тёмно-зелёный цвет линии
-          line.setAttribute('stroke-width', '2');
-          line.setAttribute('stroke-dasharray', '5,5'); // Пунктир
-          svg.appendChild(line);
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const cx1 = x1 + dx / 2;
+          const cy1 = y1;
+          const cx2 = x1 + dx / 2;
+          const cy2 = y2;
+
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
+          path.setAttribute('stroke', '#065f46');
+          path.setAttribute('stroke-width', '2');
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke-dasharray', '5,5');
+          svg.appendChild(path);
         }
       }
     }
@@ -218,31 +235,44 @@ async function changeNodeColor(color) {
   }
 }
 
-async function attachParentPrompt() {
-  const folders = boardNodes.filter(n => n.type === 'folder' && n.id !== selectedNodeId);
-  if (folders.length === 0) return alert('Нет доступных отделов!');
-
-  const folderNames = folders.map((f, i) => `${i + 1}. ${f.title}`).join('\n');
-  const choice = prompt(`Выберите родительский отдел (0 для отвязки):\n${folderNames}`);
-  
-  if (choice === null) return;
-  const idx = parseInt(choice) - 1;
-
+async function renameCurrentNode() {
   const node = boardNodes.find(n => n.id === selectedNodeId);
-  if (choice === '0') {
-    delete node.parentId;
-  } else if (folders[idx]) {
-    node.parentId = folders[idx].id;
-  }
+  if (!node) return;
 
+  const newTitle = prompt('Введите новое название:', node.title);
+  if (newTitle === null || !newTitle.trim()) return;
+
+  node.title = newTitle.trim();
   await saveBoardData();
   renderBoard();
+}
+
+function attachParentPrompt() {
+  document.getElementById('context-menu').style.display = 'none';
+  connectingSourceId = selectedNodeId;
+  isConnecting = true;
+  alert('🔗 Режим привязки: теперь нажмите левой кнопкой мыши на карточку-родитель (отдел), к которой хотите привязать этот элемент.');
+}
+
+async function finishConnecting(targetParentId) {
+  isConnecting = false;
+  const node = boardNodes.find(n => n.id === connectingSourceId);
+  if (node) {
+    if (targetParentId === 'none') {
+      delete node.parentId;
+    } else {
+      node.parentId = targetParentId;
+    }
+    await saveBoardData();
+    renderBoard();
+  }
+  connectingSourceId = null;
+  alert('Связь успешно обновлена!');
 }
 
 async function deleteCurrentNode() {
   if (!confirm('Удалить этот элемент?')) return;
   boardNodes = boardNodes.filter(n => n.id !== selectedNodeId);
-  // Также уберем привязку у дочерних элементов
   boardNodes.forEach(n => {
     if (n.parentId === selectedNodeId) delete n.parentId;
   });
@@ -403,6 +433,31 @@ function renderPaper() {
       <div style="text-indent: 20px;">${text}</div>
     `;
     sectionsRender.appendChild(secDiv);
+  });
+}
+
+function uploadImageFromFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const imgContainer = document.getElementById('images-container');
+    const img = document.createElement('img');
+    img.src = e.target.result;
+    img.style.cssText = 'max-width: 120px; max-height: 120px; margin-top: 15px; display: block;';
+    imgContainer.appendChild(img);
+  };
+  reader.readAsDataURL(file);
+}
+
+function downloadPNG() {
+  const paper = document.getElementById('paper-doc');
+  html2canvas(paper, { scale: 2 }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = `${document.getElementById('inp-code').value || 'document'}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   });
 }
 
