@@ -5,12 +5,12 @@ const app = express();
 
 app.use(express.json());
 
-// Настройка сессий в Куки (сохранение входа)
+// Настройка сессий (куки живут 24 часа)
 app.use(session({
   secret: 'umvd_secret_key_2026',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 } // Куки живут 24 часа
+  cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 app.use(express.static(__dirname));
@@ -18,7 +18,8 @@ app.use(express.static(__dirname));
 let users = [];
 let boardNodes = [
   { id: '1', type: 'folder', title: 'Руководство УМВД', color: '#15181e', x: 100, y: 100 },
-  { id: '2', type: 'doc', title: 'Приказ №1', code: 'УМВД-001', author: 'Павел Аграбейко', role: 'Начальник УМВД', sections: [{ title: 'Без заголовка', text: 'Текст приказа...' }], color: '#15181e', x: 350, y: 100, parentId: '1' }
+  { id: '2', type: 'folder', title: 'Следственный Отдел', color: '#15181e', x: 150, y: 280, parentId: '1' },
+  { id: '3', type: 'doc', title: 'Постановление №1', code: 'УМВД-001', author: 'Павел Аграбейко', role: 'Начальник УМВД', sections: [{ title: 'Установил', text: 'Текст постановления...' }], color: '#15181e', x: 250, y: 460, parentId: '2' }
 ];
 
 let leaderTemplates = [
@@ -47,7 +48,7 @@ app.post('/api/register', (req, res) => {
   };
 
   users.push(newUser);
-  req.session.user = newUser; // Сохраняем в куки
+  req.session.user = newUser;
   res.json({ success: true, user: newUser });
 });
 
@@ -56,7 +57,7 @@ app.post('/api/login', (req, res) => {
   const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
   if (!user) return res.json({ success: false, error: 'Неверный логин или пароль' });
 
-  req.session.user = user; // Сохраняем в куки
+  req.session.user = user;
   res.json({ success: true, user });
 });
 
@@ -75,6 +76,8 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/board', (req, res) => res.json(boardNodes));
 app.post('/api/board', (req, res) => {
+  const u = req.session.user;
+  if (!u || (!u.is_leader && u.role !== 'ADMIN')) return res.status(403).json({ error: 'Нет доступа' });
   if (req.body.nodes) boardNodes = req.body.nodes;
   res.json({ success: true });
 });
@@ -95,14 +98,14 @@ app.get('/api/admin/users', (req, res) => {
 
 app.post('/api/admin/update-user', (req, res) => {
   const u = req.session.user;
-  if (!u || u.role !== 'ADMIN') return res.status(403).json({ error: 'Только Админ!' });
+  if (!u || u.role !== 'ADMIN') return res.json({ success: false, error: 'Только Админ!' });
 
   const { id, role, is_leader } = req.body;
   const targetUser = users.find(usr => usr.id === Number(id));
 
   if (!targetUser) return res.json({ success: false, error: 'Пользователь не найден' });
   if (targetUser.is_main_admin && (role !== 'ADMIN' || !is_leader)) {
-    return res.json({ success: false, error: 'Нельзя снять права у Главного Администратора (UID 1)' });
+    return res.json({ success: false, error: 'Нельзя снять права у Главного Администратора' });
   }
 
   targetUser.role = role;
@@ -111,4 +114,4 @@ app.post('/api/admin/update-user', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));
+app.listen(PORT, () => console.log(`Сервер запущен: http://localhost:${PORT}`));
