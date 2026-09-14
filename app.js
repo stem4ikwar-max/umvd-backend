@@ -5,12 +5,21 @@ let currentEditingDoc = null;
 let currentCreateType = 'folder';
 let selectedNodeId = null;
 
+let isDragging = false;
+let dragNodeId = null;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
 window.addEventListener('DOMContentLoaded', () => {
   checkAuth();
+  
   document.addEventListener('click', () => {
     const menu = document.getElementById('context-menu');
     if (menu) menu.style.display = 'none';
   });
+
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
 });
 
 function switchAuthTab(type) {
@@ -85,30 +94,51 @@ function renderBoard() {
   const container = document.getElementById('board-container');
   container.querySelectorAll('.board-card').forEach(c => c.remove());
 
-  renderConnections();
+  const isLeaderOrAdmin = currentUser && (currentUser.is_leader || currentUser.role === 'ADMIN');
 
   boardNodes.forEach(node => {
     const card = document.createElement('div');
+    card.id = `node-${node.id}`;
     card.className = `board-card ${node.type}`;
     card.style.cssText = `
-      position:absolute; left:${node.x || 100}px; top:${node.y || 100}px; 
-      background:${node.color || '#15181e'}; border:1px solid #282d37; 
-      padding:12px; border-radius:8px; color:#fff; cursor:pointer; width:160px; z-index:2;
+      position: absolute; left: ${node.x || 100}px; top: ${node.y || 100}px; 
+      background: ${node.color || '#15181e'}; border: 1px solid #282d37; 
+      padding: 12px; border-radius: 8px; color: #fff; cursor: ${isLeaderOrAdmin ? 'grab' : 'pointer'}; 
+      width: 180px; z-index: 2; user-select: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     `;
     
+    const typeLabel = node.type === 'folder' ? 'ТЕМА / ОТДЕЛ' : 'ДОКУМЕНТ';
+    const icon = node.type === 'folder' ? '📁' : '📄';
+
     card.innerHTML = `
-      <div style="font-weight:bold; font-size:0.9rem;">${node.type === 'folder' ? '📁' : '📄'} ${node.title}</div>
-      ${node.code ? `<div style="font-size:0.75rem; color:#60a5fa;">${node.code}</div>` : ''}
+      <div style="font-size:0.65rem; color:#9ca3af; text-transform:uppercase; margin-bottom:2px;">${icon} ${typeLabel}</div>
+      <div style="font-weight:bold; font-size:0.9rem;">${node.title}</div>
+      ${node.code ? `<div style="font-size:0.75rem; color:#60a5fa; margin-top:4px;">${node.code}</div>` : ''}
     `;
+
+    // Перетаскивать могут только Лидер и Админ
+    card.onmousedown = (e) => {
+      if (e.button !== 0) return;
+      if (isLeaderOrAdmin) {
+        isDragging = true;
+        dragNodeId = node.id;
+        dragOffsetX = e.clientX - (node.x || 100);
+        dragOffsetY = e.clientY - (node.y || 100);
+        card.style.cursor = 'grabbing';
+      }
+    };
 
     card.onclick = (e) => {
       e.stopPropagation();
       if (node.type === 'doc') openEditor(node);
     };
 
+    // Контекстное меню ПКМ (только для Лидера / Админа)
     card.oncontextmenu = (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (!isLeaderOrAdmin) return;
+
       selectedNodeId = node.id;
       const menu = document.getElementById('context-menu');
       menu.style.left = `${e.clientX}px`;
@@ -118,8 +148,30 @@ function renderBoard() {
 
     container.appendChild(card);
   });
+
+  renderConnections();
 }
 
+function handleMouseMove(e) {
+  if (!isDragging || !dragNodeId) return;
+
+  const node = boardNodes.find(n => n.id === dragNodeId);
+  if (node) {
+    node.x = e.clientX - dragOffsetX;
+    node.y = e.clientY - dragOffsetY;
+    renderBoard();
+  }
+}
+
+async function handleMouseUp() {
+  if (isDragging) {
+    isDragging = false;
+    dragNodeId = null;
+    await saveBoardData();
+  }
+}
+
+// Отрисовка зеленых пунктирных линий (как на скрине)
 function renderConnections() {
   const svg = document.getElementById('connections-svg');
   if (!svg) return;
@@ -129,15 +181,29 @@ function renderConnections() {
     if (node.parentId) {
       const parent = boardNodes.find(n => n.id === node.parentId);
       if (parent) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', (parent.x || 100) + 80);
-        line.setAttribute('y1', (parent.y || 100) + 20);
-        line.setAttribute('x2', (node.x || 100) + 80);
-        line.setAttribute('y2', (node.y || 100) + 20);
-        line.setAttribute('stroke', '#3b82f6');
-        line.setAttribute('stroke-width', '2');
-        line.setAttribute('stroke-dasharray', '4');
-        svg.appendChild(line);
+        const elChild = document.getElementById(`node-${node.id}`);
+        const elParent = document.getElementById(`node-${parent.id}`);
+
+        if (elChild && elParent) {
+          const boardRect = document.getElementById('board-container').getBoundingClientRect();
+          const childRect = elChild.getBoundingClientRect();
+          const parentRect = elParent.getBoundingClientRect();
+
+          const x1 = parentRect.left + parentRect.width / 2 - boardRect.left;
+          const y1 = parentRect.top + parentRect.height / 2 - boardRect.top;
+          const x2 = childRect.left + childRect.width / 2 - boardRect.left;
+          const y2 = childRect.top + childRect.height / 2 - boardRect.top;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', x1);
+          line.setAttribute('y1', y1);
+          line.setAttribute('x2', x2);
+          line.setAttribute('y2', y2);
+          line.setAttribute('stroke', '#065f46'); // Тёмно-зелёный цвет линии
+          line.setAttribute('stroke-width', '2');
+          line.setAttribute('stroke-dasharray', '5,5'); // Пунктир
+          svg.appendChild(line);
+        }
       }
     }
   });
@@ -157,7 +223,7 @@ async function attachParentPrompt() {
   if (folders.length === 0) return alert('Нет доступных отделов!');
 
   const folderNames = folders.map((f, i) => `${i + 1}. ${f.title}`).join('\n');
-  const choice = prompt(`Выберите отдел (0 для отвязки):\n${folderNames}`);
+  const choice = prompt(`Выберите родительский отдел (0 для отвязки):\n${folderNames}`);
   
   if (choice === null) return;
   const idx = parseInt(choice) - 1;
@@ -174,8 +240,12 @@ async function attachParentPrompt() {
 }
 
 async function deleteCurrentNode() {
-  if (!confirm('Удалить элемент?')) return;
+  if (!confirm('Удалить этот элемент?')) return;
   boardNodes = boardNodes.filter(n => n.id !== selectedNodeId);
+  // Также уберем привязку у дочерних элементов
+  boardNodes.forEach(n => {
+    if (n.parentId === selectedNodeId) delete n.parentId;
+  });
   await saveBoardData();
   renderBoard();
 }
@@ -208,8 +278,8 @@ async function submitCreateNode() {
     type: currentCreateType,
     title: name,
     color: '#15181e',
-    x: 150 + Math.random() * 150,
-    y: 150 + Math.random() * 150
+    x: 200 + Math.random() * 100,
+    y: 200 + Math.random() * 100
   };
 
   if (currentCreateType === 'doc') {
@@ -283,7 +353,6 @@ function openEditor(doc, isTemplate = false) {
   document.getElementById('inp-role').value = doc.role || currentUser.role;
 
   const isLeaderOrAdmin = currentUser.is_leader || currentUser.role === 'ADMIN';
-  
   document.getElementById('leader-img-upload').style.display = isLeaderOrAdmin ? 'block' : 'none';
 
   const saveBtn = document.getElementById('btn-save-global');
